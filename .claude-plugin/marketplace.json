@@ -19,6 +19,18 @@
       "license": "MIT",
       "keywords": ["ascii", "ascii-art", "canvas", "animation", "generative-art", "creative-coding"],
       "category": "design"
+    },
+    {
+      "name": "interactive-book",
+      "source": "./",
+      "strict": false,
+      "skills": ["./skills/interactive-book"],
+      "description": "Build an interactive 3D book that teaches any topic, one lesson per spread: predict, lift the flap, play with an ink-drawn figure, meet the challenge. Tests it in headless Chrome, publishes to GitHub Pages and records a video for X.",
+      "homepage": "https://github.com/mys1erious/skills/tree/main/skills/interactive-book",
+      "repository": "https://github.com/mys1erious/skills",
+      "license": "MIT",
+      "keywords": ["education", "interactive-book", "threejs", "3d", "explorable-explanation", "teaching"],
+      "category": "education"
     }
   ]
 }

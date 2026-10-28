@@ -26,3 +26,11 @@ jobs:
         run: npx -y @anthropic-ai/claude-code@2.1.296 plugin validate .
       - name: ascii-art starter renders without page errors
         run: node skills/ascii-art/scripts/shoot.mjs "file://$PWD/skills/ascii-art/assets/starter.html?clean" "$RUNNER_TEMP/ascii" --times 3 --actions "glide 30%,40%; down; wait 600; up; wait 200; shot release; text frame"
+      - name: interactive-book template builds, and its models and book tests pass
+        working-directory: skills/interactive-book/assets/template
+        run: |
+          npm install --no-audit --no-fund
+          node --test tests/sims.test.mjs
+          npx vite build
+          npx playwright install --with-deps chromium
+          npx playwright test -g "every spread opens|content lint|printed controls|lesson 1"
