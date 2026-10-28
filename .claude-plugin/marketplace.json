@@ -12,12 +12,44 @@
       "name": "ascii-art",
       "source": "./",
       "strict": false,
-      "skills": ["./skills/ascii-art"],
+      "skills": [
+        "./skills/ascii-art"
+      ],
       "description": "Build ASCII art that looks designed: animated and interactive canvas pieces, image, logo and text to ASCII, plain-text art, and loopable videos for X.",
       "homepage": "https://github.com/mys1erious/skills/tree/main/skills/ascii-art",
       "repository": "https://github.com/mys1erious/skills",
       "license": "MIT",
-      "keywords": ["ascii", "ascii-art", "canvas", "animation", "generative-art", "creative-coding"],
+      "keywords": [
+        "ascii",
+        "ascii-art",
+        "canvas",
+        "animation",
+        "generative-art",
+        "creative-coding"
+      ],
+      "category": "design"
+    },
+    {
+      "name": "explainer-video",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/explainer-video"
+      ],
+      "description": "Make short narrated explainer videos drawn in code, with real data on screen: script, AI voice with word timings, frame-exact render, music and sound mix, and several styles to compare.",
+      "homepage": "https://github.com/mys1erious/skills/tree/main/skills/explainer-video",
+      "repository": "https://github.com/mys1erious/skills",
+      "license": "MIT",
+      "keywords": [
+        "video",
+        "explainer",
+        "data-visualization",
+        "tiktok",
+        "shorts",
+        "canvas",
+        "elevenlabs",
+        "motion-graphics"
+      ],
       "category": "design"
     }
   ]

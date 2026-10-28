@@ -1,0 +1,10 @@
+{
+  "voice": "JBFqnCBsd6RMkjVDRZzb",
+  "lead": 0.3,
+  "gap": 0.24,
+  "lines": [
+    {"text": "Picture all of Earth's water as a thousand drops.", "cues": ["thousand"]},
+    {"text": "Only twenty-five are fresh.", "cues": ["twenty"], "pause": 0.15},
+    {"text": "And seventeen of those are frozen in ice.", "cues": ["seventeen", "frozen"]}
+  ]
+}
