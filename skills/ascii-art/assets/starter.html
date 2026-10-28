@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ASCII Starter</title>
+<link rel="icon" href="data:,">
+<style>
+  :root { --bg: #0b0c10; --help: #8fa3b8; color-scheme: dark; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+  .help {
+    position: fixed; left: 16px; bottom: 12px; margin: 0;
+    font: 11px/1.5 ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: .04em; color: var(--help); opacity: .6; pointer-events: none; user-select: none;
+  }
+  body.clean .help, body.rec .help { display: none; }
+  @media (max-width: 600px) { .help { display: none; } }
+</style>
+</head>
+<body>
+<canvas id="c" role="img" aria-label="An ASCII planet with an orbit ring in a field of stars. The cursor is the light: move to light it from another side, hold and release to send a shockwave."></canvas>
+<p class="help" id="help">move: the cursor is the light · hold + release: shockwave · 1–3 style · space pause · H hold · R record · T copy as text</p>
+<script>
+(() => {
+  'use strict';
+
+  // ================= the piece: change these =================
+  const TITLE = 'ASCII STARTER';   // shown top-left unless ?clean
+  const LOOP = 10;                  // seconds; the timeline wraps here: everything visible must repeat a whole number of times per loop
+  const WEIGHT = 700;               // bold reads better on dark grounds at small sizes; 400 for fine detail
+  const STYLES = [                  // one background and four roles: 1 dim, 2 ink, 3 accent, 4 hot
+    { name: 'Night', bg: '#0b0c10', roles: ['#2b3646', '#b9c6d6', '#5fa8ff', '#ffffff'], help: '#8fa3b8' },
+    { name: 'Phosphor', bg: '#020a05', roles: ['#0f3a1d', '#38d96b', '#9dffbc', '#eafff0'], help: '#5dff8f' },
+    { name: 'Ember', bg: '#120804', roles: ['#3d1e0d', '#e8a25a', '#ff6a2b', '#fff1dc'], help: '#e8a25a' },
+  ];
+  const RAMP = ' .:-=+*#%@';        // dark to bright
+
+  // ================= engine =================
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d', { alpha: false });
+  const q = new URLSearchParams(location.search);
+  const clean = q.has('clean');     // ?clean: no labels or hints, for video and stills
+  document.body.classList.toggle('clean', clean);
+  const MONO = 'ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace';
+  const STEP = 1 / 60, TAU = Math.PI * 2;
+  let CW = 8, CH = 12, FONT = 10;   // cell size in CSS px; finer on phones, see resize()
+
+  function mulberry32(a) {
+    return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  }
+  function hash2(a, b) { let h = Math.imul(a | 0, 374761393) ^ Math.imul(b | 0, 668265263); h = Math.imul(h ^ h >>> 13, 1274126177); return (h ^ h >>> 16) >>> 0; }
+  const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+  const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+  const lerp = (a, b, t) => a + (b - a) * t;
+  function vnoise(x, y) { // value noise in [0, 1]
+    const xi = Math.floor(x), yi = Math.floor(y), u = x - xi, v = y - yi, su = u * u * (3 - 2 * u), sv = v * v * (3 - 2 * v);
+    const h = (a, b) => (hash2(a, b) & 1023) / 1023;
+    return lerp(lerp(h(xi, yi), h(xi + 1, yi), su), lerp(h(xi, yi + 1), h(xi + 1, yi + 1), su), sv);
+  }
+  const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const DIRS = ['-', '\\', '|', '/'];
+  const dirGlyph = (x, y) => DIRS[((Math.round(Math.atan2(y, x) / (Math.PI / 4)) % 4) + 4) % 4]; // a glyph that runs along (x, y), screen coords
+
+  // ---- the cell buffer: the scene writes cells, the renderer draws them, text export reads them ----
+  let W = 0, H = 0, dpr = 1, s = 1, cols = 0, rows = 0;
+  let G, ROLE, A, TL;               // glyph code, role, glyph alpha, tile (filled cell) alpha
+  function cell(c, r, glyph, role, a, tile = 0) { // later writes win: draw back to front
+    if (c < 0 || r < 0 || c >= cols || r >= rows || (a <= 0 && tile <= 0)) return;
+    const k = r * cols + c;
+    G[k] = glyph.charCodeAt(0); ROLE[k] = role; A[k] = Math.min(1, a); TL[k] = Math.min(1, tile);
+  }
+  const put = (x, y, glyph, role, a, tile) => cell(Math.floor(x / CW), Math.floor(y / CH), glyph, role, a, tile); // by pixel position
+  function over(c, r, glyph, role, a, tile = 0) { // for see-through layers and glows: writes only where it is brighter than what's there
+    if (c < 0 || r < 0 || c >= cols || r >= rows) return;
+    const k = r * cols + c;
+    if (Math.max(a, tile) > Math.max(A[k], TL[k])) cell(c, r, glyph, role, a, Math.max(tile, TL[k]));
+  }
+
+  // ---- renderer: one fillStyle per role and alpha level, tiles first, glyphs on top ----
+  const LV = 20;                    // alpha levels per role; with the dither below, gradients don't band
+  const CHARS = Array.from({ length: 128 }, (_, i) => String.fromCharCode(i));
+  const lists = Array.from({ length: 5 * (LV + 1) }, () => []);
+  let styleIx = clamp((+q.get('style') || 1) - 1, 0, STYLES.length - 1), fills = null;
+  function setStyle(i) {
+    styleIx = i;
+    const st = STYLES[i];
+    fills = [null, ...st.roles.map(h => { const [r, g, b] = hex(h); return Array.from({ length: LV + 1 }, (_, L) => `rgba(${r},${g},${b},${(L / LV).toFixed(3)})`); })];
+    document.documentElement.style.setProperty('--bg', st.bg);
+    document.documentElement.style.setProperty('--help', st.help);
+  }
+  function render() {
+    const st = STYLES[styleIx];
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = st.bg; ctx.fillRect(0, 0, W, H);
+    ctx.font = `${WEIGHT} ${FONT}px ${MONO}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const tiles of [true, false]) {
+      const V = tiles ? TL : A;
+      for (const l of lists) l.length = 0;
+      for (let k = 0; k < V.length; k++) {
+        const v = V[k];
+        if (v <= 0.01 || (!tiles && G[k] === 32)) continue;
+        const L = Math.round(clamp(v + ((hash2(k, 7) & 255) / 255 - 0.5) / LV, 0, 1) * LV); // dither one level
+        if (L) lists[ROLE[k] * (LV + 1) + L].push(k);
+      }
+      for (let i = LV + 1; i < lists.length; i++) { // role 0 draws nothing
+        const l = lists[i];
+        if (!l.length) continue;
+        ctx.fillStyle = fills[(i / (LV + 1)) | 0][i % (LV + 1)];
+        if (tiles) for (const k of l) ctx.fillRect((k % cols) * CW, ((k / cols) | 0) * CH, CW, CH);
+        else for (const k of l) ctx.fillText(G[k] < 128 ? CHARS[G[k]] : String.fromCharCode(G[k]), (k % cols) * CW + CW / 2, ((k / cols) | 0) * CH + CH / 2 + 1);
+      }
+    }
+    if (!clean && !recording) {
+      ctx.font = `11px ${MONO}`; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = st.help;
+      ctx.textAlign = 'left'; ctx.fillText(`${TITLE} · ${st.name.toUpperCase()}`, 20, 30);
+      ctx.textAlign = 'right'; ctx.fillText(`${hold ? 'HOLD · ' : ''}${t.toFixed(1).padStart(4, '0')} / ${LOOP.toFixed(1)}s`, W - 20, 30);
+    }
+  }
+
+  // the current frame as plain text (T copies it; scripts call window.ascii.text())
+  function frameText() {
+    let out = '';
+    for (let r = 0; r < rows; r++) {
+      let line = '';
+      for (let c = 0; c < cols; c++) {
+        const k = r * cols + c;
+        line += A[k] > 0.08 && G[k] !== 32 ? String.fromCharCode(G[k]) : TL[k] > 0.3 ? '#' : ' ';
+      }
+      out += line.trimEnd() + '\n';
+    }
+    return out;
+  }
+  window.ascii = { text: frameText };
+
+  // ================= the scene =================
+  let t = 0, ft = 0, paused = false, recording = false; // t: timeline (wraps), ft: effects clock (never wraps)
+  let hold = q.has('hold');         // H or ?hold: freeze the timeline while input and effects keep running
+  const seed = +q.get('seed') || 7;
+  const pointer = { x: 0, y: 0, inside: false, moved: -1e9, down: false, downAt: 0 };
+  const light = { x: -1, y: -0.6 }; // light direction in sphere radii, eased toward its target
+  let charge = 0, waves = [], stars = [];
+  const geo = () => ({ cx: W / 2, cy: H * 0.5, R: Math.min(W, H) * 0.27 });
+  const BEATS = [ // scripted moments: each fires once per loop, also during ?t= warm-up
+    { at: 5, fire: () => { const g = geo(); waves.push({ x: g.cx, y: g.cy, t: ft, s: 0.8, speed: 520 * s, life: 1.6 }); } },
+  ];
+
+  function update(dt) {
+    if (paused) return;
+    const prev = t;
+    ft += dt;
+    if (!hold) { t += dt; if (t >= LOOP) t -= LOOP; }
+    for (const b of BEATS) if (prev < b.at && t >= b.at) b.fire();
+    // the cursor is the light; idle, the light circles on its own so the loop never sits still
+    const g = geo();
+    let tx, ty;
+    if (!recording && pointer.inside && performance.now() - pointer.moved < 4000) {
+      tx = clamp((pointer.x - g.cx) / g.R, -2, 2); ty = clamp((pointer.y - g.cy) / g.R, -2, 2);
+    } else { const a = t / LOOP * TAU; tx = 1.4 * Math.cos(a + 2.4); ty = -0.5 + 0.5 * Math.sin(a); }
+    const k = Math.min(1, dt * 8);
+    light.x += (tx - light.x) * k; light.y += (ty - light.y) * k;
+    charge = pointer.down && !recording ? Math.min(1, (performance.now() - pointer.downAt) / 1000) : 0;
+    waves = waves.filter(w => ft - w.t < w.life);
+  }
+
+  function scene() {
+    G.fill(32); ROLE.fill(0); A.fill(0); TL.fill(0);
+    const g = geo(), m = 1; // master alpha: smooth(0, 1, t) * (1 - smooth(LOOP - 1, LOOP, t)) would fade in and out each loop
+
+    // 1. haze and stars, the quiet ground
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const n = vnoise(c * 0.05 + 3 * Math.cos(t / LOOP * TAU), r * 0.08 + 2 * Math.sin(t / LOOP * TAU)); // drifts on a circle: back where it started each loop
+      if (n > 0.62) cell(c, r, n > 0.74 ? ':' : '.', 1, (n - 0.62) * 3 * m);
+    }
+    for (const st of stars) cell(st.c, st.r, st.g, st.g === '*' ? 2 : 1, (0.3 + 0.7 * (0.5 + 0.5 * Math.sin(t / LOOP * TAU * st.k + st.p))) * m); // whole twinkles per loop
+
+    // 2. the orbit ring behind, the planet, the ring in front
+    const ring = front => {
+      const tilt = -0.3, ct = Math.cos(tilt), stt = Math.sin(tilt), rx = g.R * 1.75, ry = g.R * 0.3, n = Math.ceil(TAU * rx / CW * 1.5);
+      for (let i = 0; i < n; i++) {
+        const th = i / n * TAU;
+        if ((Math.sin(th) > 0) !== front) continue;
+        const ex = Math.cos(th) * rx, ey = Math.sin(th) * ry, x = g.cx + ex * ct - ey * stt, y = g.cy + ex * stt + ey * ct;
+        if (!front && Math.hypot(x - g.cx, y - g.cy) < g.R) continue; // hidden behind the planet
+        const dx = -Math.sin(th) * rx, dy = Math.cos(th) * ry;
+        const shimmer = 0.5 + 0.5 * Math.sin(th * 5 - t / LOOP * TAU * 3);
+        put(x, y, dirGlyph(dx * ct - dy * stt, dx * stt + dy * ct), front ? 3 : 1, (0.55 + 0.45 * shimmer) * m, front ? 0.25 * m : 0); // a faint tile: over the planet the ring reads as a bright band, not a gap
+      }
+    };
+    ring(false);
+    const ll = Math.hypot(light.x, light.y, 0.8), Lx = light.x / ll, Ly = light.y / ll, Lz = 0.8 / ll;
+    const spin = t / LOOP * TAU; // one turn per loop
+    const c0 = Math.max(0, Math.floor((g.cx - g.R) / CW)), c1 = Math.min(cols - 1, Math.ceil((g.cx + g.R) / CW));
+    const r0 = Math.max(0, Math.floor((g.cy - g.R) / CH)), r1 = Math.min(rows - 1, Math.ceil((g.cy + g.R) / CH));
+    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+      const nx = (c * CW + CW / 2 - g.cx) / g.R, ny = (r * CH + CH / 2 - g.cy) / g.R, d2 = nx * nx + ny * ny; // pixel space, so circles stay round
+      if (d2 > 1) continue;
+      const nz = Math.sqrt(1 - d2), diffuse = Math.max(0, nx * Lx + ny * Ly + nz * Lz);
+      const lon = Math.atan2(nx, nz) + spin, lat = Math.asin(ny) * 2.4; // noise on (cos, sin) of longitude wraps around the globe, so the spin loops
+      const land = clamp(0.5 + 1.8 * ((vnoise(1.7 * Math.cos(lon) + 40, lat + 40) + vnoise(1.7 * Math.sin(lon) + 90, lat + 90)) / 2 - 0.5), 0, 1);
+      const b = clamp(diffuse * (0.5 + 0.7 * land) + 0.3 * charge, 0, 1);
+      if (b < 0.07) { if (hash2(c, r) % 5 === 0) cell(c, r, '.', 1, 0.6 * m); continue; } // night side: keep the silhouette
+      cell(c, r, RAMP[Math.min(9, 1 + Math.floor(b * 9))], b > 0.85 ? 4 : land > 0.55 ? 2 : 3, (0.35 + 0.65 * b) * m, b * 0.3 * m);
+    }
+    ring(true);
+
+    // 3. interaction: a contracting ring while held, shockwaves after release
+    if (charge > 0) {
+      const R = (1 - charge) * 120 * s + 22 * s, n = Math.ceil(TAU * R / CW * 1.5);
+      for (let i = 0; i < n; i++) { const a = i / n * TAU; put(pointer.x + Math.cos(a) * R, pointer.y + Math.sin(a) * R, dirGlyph(-Math.sin(a), Math.cos(a)), 4, 0.4 + 0.6 * charge); }
+    }
+    for (const w of waves) {
+      const age = ft - w.t, R = age * w.speed, a = w.s * (1 - age / w.life), band = CH * 1.5;
+      const wc0 = Math.max(0, Math.floor((w.x - R - band) / CW)), wc1 = Math.min(cols - 1, Math.ceil((w.x + R + band) / CW));
+      const wr0 = Math.max(0, Math.floor((w.y - R - band) / CH)), wr1 = Math.min(rows - 1, Math.ceil((w.y + R + band) / CH));
+      for (let r = wr0; r <= wr1; r++) for (let c = wc0; c <= wc1; c++) {
+        const dx = c * CW + CW / 2 - w.x, dy = r * CH + CH / 2 - w.y, d = Math.abs(Math.hypot(dx, dy) - R);
+        if (d < band) cell(c, r, dirGlyph(-dy, dx), 4, a * (1 - d / band), 0.3 * a * (1 - d / band));
+      }
+    }
+  }
+
+  // ================= lifecycle =================
+  function resize() {
+    const box = canvas.getBoundingClientRect(); // the canvas's own box: hosts and iframes may pad the page
+    W = Math.round(box.width) || innerWidth; H = Math.round(box.height) || innerHeight;
+    if (!W || !H) return;
+    // while recording, cap the file at X's upload limits: 1920x1200 landscape, 1200x1900 portrait
+    dpr = recording ? Math.min(devicePixelRatio || 1, W >= H ? Math.min(1920 / W, 1200 / H) : Math.min(1200 / W, 1900 / H)) : Math.min(devicePixelRatio || 1, 2);
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    s = Math.min(W, H) / 900;
+    [CW, CH, FONT] = Math.min(W, H) < 600 ? [6, 9, 7.5] : [8, 12, 10];
+    cols = Math.ceil(W / CW); rows = Math.ceil(H / CH);
+    const n = cols * rows;
+    G = new Uint16Array(n); ROLE = new Uint8Array(n); A = new Float32Array(n); TL = new Float32Array(n);
+    const rng = mulberry32(seed);
+    stars = Array.from({ length: Math.round(n / 70) }, () => ({ c: rng() * cols | 0, r: rng() * rows | 0, g: '..:*'[rng() * 4 | 0], k: 1 + (rng() * 6 | 0), p: rng() * TAU }));
+  }
+
+  let last = performance.now(), acc = 0;
+  function frame(now) {
+    requestAnimationFrame(frame); // first, so an exception below can't stop the loop
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (!W || !H) return;         // zero-size iframe or hidden tab
+    acc += dt;
+    while (acc >= STEP) { update(STEP); acc -= STEP; } // fixed step: the same motion at any frame rate
+    scene(); render();
+  }
+
+  function record() { // R: one loop from t = 0 as MP4 (WebM where MP4 isn't supported); drop this in hosts that block downloads
+    if (recording || !window.MediaRecorder) return;
+    const type = ['video/mp4;codecs=avc1.640028', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'].find(x => MediaRecorder.isTypeSupported(x));
+    recording = true; paused = false; hold = false; pointer.down = false; waves = []; t = 0; ft = 0;
+    document.body.classList.add('rec');
+    resize();
+    const rec = new MediaRecorder(canvas.captureStream(60), { mimeType: type, videoBitsPerSecond: 20e6 });
+    const chunks = [];
+    rec.ondataavailable = e => e.data.size && chunks.push(e.data);
+    rec.onstop = () => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob(chunks, { type }));
+      a.download = `ascii.${type.includes('mp4') ? 'mp4' : 'webm'}`;
+      a.click();
+      recording = false; document.body.classList.remove('rec'); resize();
+    };
+    rec.start();
+    setTimeout(() => rec.stop(), LOOP * 1000);
+  }
+
+  const local = e => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  canvas.addEventListener('pointermove', e => { [pointer.x, pointer.y] = local(e); pointer.inside = true; pointer.moved = performance.now(); });
+  canvas.addEventListener('pointerdown', e => {
+    [pointer.x, pointer.y] = local(e); pointer.inside = true; pointer.down = true; pointer.downAt = pointer.moved = performance.now();
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointerup', () => {
+    if (!pointer.down) return;
+    pointer.down = false;
+    if (recording) return;
+    const c = Math.min(1, (performance.now() - pointer.downAt) / 1000);
+    waves.push({ x: pointer.x, y: pointer.y, t: ft, s: 0.4 + 0.6 * c, speed: 700 * s, life: 1.2 + 0.6 * c });
+  });
+  canvas.addEventListener('pointerleave', () => { pointer.inside = false; });
+  addEventListener('keydown', e => {
+    if (recording) return;
+    const n = +e.key;
+    if (n >= 1 && n <= STYLES.length) setStyle(n - 1);
+    else if (e.key === ' ') { paused = !paused; e.preventDefault(); }
+    else if (e.key === 'h' || e.key === 'H') hold = !hold;
+    else if (e.key === 'r' || e.key === 'R') record();
+    else if (e.key === 't' || e.key === 'T') { const txt = frameText(); (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).catch(() => console.log(txt)); }
+  });
+
+  setStyle(styleIx);
+  new ResizeObserver(resize).observe(canvas);
+  resize();
+  // ?t=4.5 freezes on that moment (for stills); add &play to keep running from there, or &hold to play with that moment
+  const warm = clamp(+q.get('t') || 0, 0, LOOP - 0.01);
+  if (warm) { const h = hold; hold = false; for (let i = 0; i < warm / STEP; i++) update(STEP); hold = h; paused = !q.has('play') && !hold; }
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches && !warm) { for (let i = 0; i < 3 / STEP; i++) update(STEP); paused = true; }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "name": "mys1erious",
+  "owner": {
+    "name": "mys1erious",
+    "url": "https://github.com/mys1erious"
+  },
+  "metadata": {
+    "description": "Agent skills by mys1erious for Claude Code, Codex, Cursor and other agents."
+  },
+  "plugins": [
+    {
+      "name": "ascii-art",
+      "source": "./",
+      "strict": false,
+      "skills": ["./skills/ascii-art"],
+      "description": "Build ASCII art that looks designed: animated and interactive canvas pieces, image, logo and text to ASCII, plain-text art, and loopable videos for X.",
+      "homepage": "https://github.com/mys1erious/skills/tree/main/skills/ascii-art",
+      "repository": "https://github.com/mys1erious/skills",
+      "license": "MIT",
+      "keywords": ["ascii", "ascii-art", "canvas", "animation", "generative-art", "creative-coding"],
+      "category": "design"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+name: Validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - name: Skills follow the Agent Skills spec
+        run: |
+          for dir in skills/*/; do
+            uvx --from "git+https://github.com/agentskills/agentskills@69ef37e9424c0a7ea9dd2293b559e43ec8176379#subdirectory=skills-ref" skills-ref validate "$dir"
+          done
+      - name: Claude Code plugin marketplace is valid
+        run: npx -y @anthropic-ai/claude-code@2.1.296 plugin validate .
+      - name: ascii-art starter renders without page errors
+        run: node skills/ascii-art/scripts/shoot.mjs "file://$PWD/skills/ascii-art/assets/starter.html?clean" "$RUNNER_TEMP/ascii" --times 3 --actions "glide 30%,40%; down; wait 600; up; wait 200; shot release; text frame"
