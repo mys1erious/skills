@@ -107,6 +107,111 @@ function tabular(text, x, y, align = 'left') {
   ctx.textAlign = ta;
 }
 
+// ---------- kinetic type and impact ----------
+const slam = (t, t0, amt = .4) => 1 + amt * (1 - spring(t - t0, .45, 15)); // a scale that lands from 1 + amt to 1, with overshoot
+// a word that slams in at t0, centred on (x, y), and shrinks away at o.out. o: {out, weight, color, box (fill), pad, r, rot, amt, sp, family}
+function stamp(t, t0, str, x, y, size, o = {}) {
+  const po = o.out != null && t > o.out ? easeInCubic(clamp((t - o.out) / .2)) : 0;
+  if (t < t0 || po >= 1) return;
+  setFont(o.weight ?? 900, size, o.sp ?? 0, o.family);
+  const w = ctx.measureText(str).width, s = slam(t, t0, o.amt ?? .5) * (1 - .3 * po), pad = o.pad ?? size * .25;
+  ctx.save(); ctx.globalAlpha *= 1 - po; ctx.translate(x, y); ctx.rotate(o.rot ?? 0); ctx.scale(s, s);
+  if (o.box) rr(-w / 2 - pad, -size * .56, w + pad * 2, size * 1.04, o.r ?? size * .2, o.box);
+  ctx.fillStyle = o.color ?? '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(str, 0, size * .36);
+  ctx.restore(); ctx.letterSpacing = '0px';
+}
+// a line of type rising into place through a clip at t0 (baseline y), dropping out at o.out. Returns its width.
+// o: {weight, color, align: 'left' | 'center' | 'right', dur, out, sp, family}
+function rise(t, t0, str, x, y, size, o = {}) {
+  if (t < t0) return 0;
+  setFont(o.weight ?? 900, size, o.sp ?? 0, o.family);
+  const w = ctx.measureText(str).width, ax = o.align === 'center' ? x - w / 2 : o.align === 'right' ? x - w : x;
+  const p = easeOutQuint(clamp((t - t0) / (o.dur ?? .45))), po = o.out != null && t > o.out ? easeInCubic(clamp((t - o.out) / .22)) : 0;
+  if (po < 1) {
+    ctx.save(); ctx.beginPath(); ctx.rect(ax - 14, y - size * .95, w + 28, size * 1.25); ctx.clip();
+    ctx.fillStyle = o.color ?? '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText(str, ax, y + ((1 - p) + po) * size * 1.3); ctx.restore();
+  }
+  ctx.letterSpacing = '0px';
+  return w;
+}
+// a label that points at something: a dot on the target (tx, ty), a leader line drawn out from it at t0, then the text
+// in a pill at (x, y). o: {size (30), color, fill, line, align: 'left' | 'right' (which side of x the text sits), out}
+function label(t, t0, text, x, y, tx, ty, o = {}) {
+  const po = o.out != null && t > o.out ? clamp((t - o.out) / .2) : 0;
+  if (t < t0 || po >= 1) return;
+  const p = easeOutCubic(clamp((t - t0) / .25)), size = o.size ?? 30, col = o.line ?? o.color ?? '#fff';
+  ctx.save(); ctx.globalAlpha *= 1 - po;
+  ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(lerp(tx, x, p), lerp(ty, y, p)); ctx.stroke();
+  ctx.beginPath(); ctx.arc(tx, ty, 7 * spring(t - t0, .5, 16), 0, TAU); ctx.fill();
+  if (t > t0 + .18) {
+    setFont(700, size, 1); const w = ctx.measureText(text).width, k = spring(t - t0 - .18, .5, 15), left = (o.align ?? 'left') === 'left';
+    const bx = left ? x : x - w - size * .9, by = y - size * .8;
+    ctx.translate(x, y); ctx.scale(k, k); ctx.translate(-x, -y);
+    rr(bx, by, w + size * .9, size * 1.6, size * .8, o.fill ?? THEME.pill);
+    ctx.fillStyle = o.color ?? '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(text, bx + size * .45, y + size * .02);
+  }
+  ctx.restore(); ctx.letterSpacing = '0px';
+}
+// a soft additive glow of radius r: a cached gradient sprite, much cheaper than shadowBlur
+const GLOWS = {};
+function glow(x, y, r, color = '#fff', a = 1) {
+  let g = GLOWS[color];
+  if (!g) {
+    g = GLOWS[color] = mk(128, 128); const c = g.getContext('2d'), gr = c.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gr.addColorStop(0, color); gr.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = gr; c.fillRect(0, 0, 128, 128);
+    c.globalCompositeOperation = 'destination-in'; c.drawImage(g, 0, 0); // square the falloff: a bright core, a long soft tail
+  }
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha *= a; ctx.drawImage(g, x - r, y - r, r * 2, r * 2); ctx.restore();
+}
+// camera shake after a hit at t0: translate by the result; it decays in about 0.4 s
+const shake = (t, t0, amp = 16) => ({ x: amp * kick(t - t0, .3, 38), y: amp * .6 * kick(t - t0 - .02, .3, 45) });
+// an impact frame: the whole frame flashes `color` at t0 and fades over dur
+function flash(t, t0, dur = .25, color = '#fff') {
+  const a = t < t0 ? 0 : 1 - clamp((t - t0) / dur); if (a <= 0) return;
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = a * a; ctx.fillStyle = color; ctx.fillRect(0, 0, W, H); ctx.restore();
+}
+
+// ---------- shots and transitions ----------
+// draw into an offscreen canvas: ctx points at it while fn runs
+function layer(cv, fn) { const main = ctx; ctx = cv.getContext('2d'); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, W, H); ctx.globalAlpha = 1; try { fn(); } finally { ctx = main; } }
+const LA = mk(W, H), LB = mk(W, H);
+// shots: [{t0, draw(t), tr?, focus?(t), focusIn?(t)}] in time order. Each shot draws the whole frame, background included.
+// tr is how a shot hands over to the next one, centred on its start time:
+//   'in'   zoom into the shot's focus point; the next shot opens through a growing circle there
+//   'out'  the shot shrinks back into a closing circle at its focus, revealing the next (which can set focusIn)
+//   'whip' the shot slides up and out, the next slides up in
+//   'cut'  (default) switches on the frame
+// o: {dur: half the transition in seconds (.28), ring: the circle's edge colour, or null for none}
+function scenes(t, shots, o = {}) {
+  const TW = o.dur ?? .28, C = { x: W / 2, y: H / 2 }, D = Math.hypot(W, H);
+  let i = 0; while (i + 1 < shots.length && t >= shots[i + 1].t0) i++;
+  let A = null, B = null;
+  if (i + 1 < shots.length && t > shots[i + 1].t0 - TW) { A = shots[i]; B = shots[i + 1]; }
+  else if (i > 0 && t < shots[i].t0 + TW) { A = shots[i - 1]; B = shots[i]; }
+  if (!A || !A.tr || A.tr === 'cut') { ctx.save(); shots[i].draw(t); ctx.restore(); return; }
+  const p = (t - (B.t0 - TW)) / (2 * TW);
+  const paint = (cv, sc, f, s, ty = 0) => layer(cv, () => { ctx.translate(f.x, f.y + ty); ctx.scale(s, s); ctx.translate(-f.x, -f.y); sc.draw(t); });
+  const iris = (cv, f, R) => {
+    if (R < 1) return;
+    ctx.save(); ctx.beginPath(); ctx.arc(f.x, f.y, R, 0, TAU); ctx.clip(); ctx.drawImage(cv, 0, 0); ctx.restore();
+    if (o.ring !== null && R < D) { ctx.strokeStyle = o.ring ?? '#fff'; ctx.lineWidth = 8; ctx.beginPath(); ctx.arc(f.x, f.y, R, 0, TAU); ctx.stroke(); }
+  };
+  if (A.tr === 'in') {
+    const f = A.focus ? A.focus(t) : C;
+    paint(LA, A, f, Math.exp(Math.log(5) * easeInCubic(p))); paint(LB, B, f, Math.exp(Math.log(.45) * (1 - easeOutCubic(p))));
+    ctx.drawImage(LA, 0, 0); iris(LB, f, D * easeInCubic(p));
+  } else if (A.tr === 'out') {
+    const fa = A.focus ? A.focus(t) : C, fb = B.focusIn ? B.focusIn(t) : C;
+    paint(LB, B, fb, Math.exp(Math.log(2.2) * (1 - easeOutCubic(p)))); paint(LA, A, fa, Math.exp(Math.log(.35) * easeInCubic(p)));
+    ctx.drawImage(LB, 0, 0); iris(LA, fa, D * (1 - easeOutCubic(p)));
+  } else {
+    paint(LA, A, C, 1, -H * easeInCubic(p)); paint(LB, B, C, 1, H * (1 - easeOutCubic(p)));
+    ctx.drawImage(LA, 0, 0); ctx.drawImage(LB, 0, 0);
+  }
+}
+
 // ---------- word-by-word subtitles from the voice timeline, centred at y ----------
 // o: {size, maxW, maxLines, upper, fill, now, past, next}: the spoken word is `now`, earlier words `past`, later ones `next`.
 // A sentence longer than maxLines (2) lines shows a page at a time; the next page rises in as its first word is spoken.

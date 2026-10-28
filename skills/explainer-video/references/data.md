@@ -11,6 +11,17 @@ Go to the agency, survey, paper or dataset that produced the numbers, not an art
 
 Check two things before building on a figure: that it is current (a newer estimate may disagree), and that two independent sources roughly agree. If they don't, use the more conservative figure, or leave the claim out of the script.
 
+## Facts from papers
+
+Some topics have no dataset: how fast a nerve signal travels, how long a reaction takes. Then the facts come from published measurements.
+- **Use the paper's own numbers,** for the population and conditions it measured (adults, the arm, heat as the stimulus). Cite author, year and journal, and keep a note of which table or figure each value comes from.
+- **Prefer reviews and repeated measurements** over a single small study. Where studies differ, give the range in `facts.json` and say a typical value.
+- **Separate measured from modelled.** A value you calculate from measured parts (distance ÷ speed + a relay delay) is a model. Mark it on screen (an asterisk with "model" on the end card), or say "about". Never present it as a measurement.
+- **A slowed-down clock** (a millisecond counter running in slow motion) is a fair device for showing timings: every on-screen position follows from the clock and the real speeds.
+- **Access:** PubMed and some publishers block automated fetches. The Europe PMC REST API (`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=…&format=json`, and `…/{PMCID}/fullTextXML` for open-access full text) returns abstracts and open texts without a captcha.
+
+`facts.json` still holds every number the script says, with its source and whether it is measured or modelled.
+
 ## Prepare once, load small
 
 ```

@@ -25,7 +25,7 @@ index.html + engine.js ◀───────────┘  draw(t) is a pur
 
 | File | What it is |
 |---|---|
-| `assets/engine.js` | The frame harness: `start`, `seek(t)` with motion blur, grain and vignette, easing and springs, seeded random, camera, captions, word-by-word subtitles. |
+| `assets/engine.js` | The frame harness: `start`, `seek(t)` with motion blur, grain and vignette, easing and springs, seeded random, camera, shots with zoom-through and whip transitions, kinetic type, shake and flash, captions, word-by-word subtitles. |
 | `assets/starter/` | A working 12-second video to copy: `index.html` and `narration.json`, real data (1,000 drops of water, 25 fresh). It is deliberately small. It shows how the pieces connect, not the quality bar (step 6). |
 | `scripts/voice.py` | Narration to voice and word timeline with ElevenLabs. Also designs voices, and makes silent drafts without a key. |
 | `scripts/render.py` | Contact sheet, single frames or the video, in headless Chrome. Exits 1 on page errors. |
@@ -33,6 +33,7 @@ index.html + engine.js ◀───────────┘  draw(t) is a pur
 | `scripts/targets.py` | Generates target frames per scene (and per style) with Gemini: the look is fixed as pictures before any drawing code. |
 | `references/engine.md` | Page contract, every engine global and helper, sound kinds, music modes, WebGL, performance. |
 | `references/data.md` | Real data: finding sources, preparing them once, computing the facts you say, truth rules for the screen. |
+| `references/motion.md` | Dynamic, TikTok-paced videos: a new shot every second, transitions, kinetic type, impact, a character, the shot list. |
 | `references/styles.md` | Several styles of one video: shared brief, target frames, parallel builds, side-by-side comparison. |
 
 Run the scripts with `uv run <skill>/scripts/<script>.py …`; their dependencies are declared inline, so uv installs them on first use. Without uv: `pip install playwright pillow numpy soundfile pyloudnorm`, then `python <script>`. If Google Chrome is not installed, run `playwright install chromium` once.
@@ -45,6 +46,7 @@ Ask only for what the request leaves open and what would change the build:
 - **Platform and shape:** 1080×1920 (9:16) for TikTok, Reels and Shorts is the default. 1920×1080 for YouTube, 1080×1350 (4:5) for the X or Instagram feed.
 - **Length:** 25–45 s for short-form.
 - **Real data or illustration:** if the video states facts, it shows the real data behind them (step 3).
+- **Energy:** *dynamic* is the default for TikTok, Reels and Shorts: a new shot about every second, kinetic type, impact frames, one continuous ride (`references/motion.md`). *Calm*, 4–6 scenes in one world, suits a data feature, YouTube or a screen in a museum.
 - **Look:** one style by default. When the user is exploring, build 3–4 styles of the same video to compare (`references/styles.md`).
 - **Voice:** ElevenLabs needs a key (`ELEVENLABS_API_KEY` in the environment or a `.env` in the project or a parent folder). The default voice is a premade one; `voice.py --design` makes a custom one. Without a key, make a silent draft with `--silent` and captions that carry the words.
 
@@ -61,7 +63,7 @@ Any Google Font works the same way (raw TTF from `github.com/google/fonts`, load
 
 ## 3. Get the data
 
-When the video states facts, the data comes from primary sources (agencies, papers, datasets), not from memory. Download it once into `<project>/data/raw/`, prepare it with a script into small files the page loads (`data/*.json`, PNG rasters), and compute every number the voice says from the data. Record each source on the end card. `references/data.md` has the workflow and the truth rules.
+When the video states facts, the data comes from primary sources (agencies, papers, datasets), not from memory. Download it once into `<project>/data/raw/`, prepare it with a script into small files the page loads (`data/*.json`, PNG rasters), and compute every number the voice says from the data. Record each source on the end card. `references/data.md` has the workflow and the truth rules, including facts that come from research papers rather than a dataset.
 
 ## 4. Write the script
 
@@ -77,7 +79,7 @@ Replace the starter's `narration.json`:
 
 Write it for the ear and the eye:
 1. **The first line is the hook, and the first frame already shows it.** The striking visual is moving at t = 0. Don't open on a title.
-2. **One idea, one step per line.** 6–10 lines, 60–100 words for about 30 s (the voice reads 150–165 wpm).
+2. **One idea, one step per line,** each 12 words or fewer. Budget about 2.2 spoken words per second of video, so 60–70 words for 30 s. That allows for the voice's pace (160–185 wpm), the gaps between lines and the 2.5 s end card.
 3. **Every line has a visual that proves it.** If you can't say what the screen shows during a line, cut the line or find the picture.
 4. **Speakable:** short sentences, numbers as words ("eight and a half thousand"), no parentheses, symbols or abbreviations the voice could misread.
 5. **The voice and the screen agree with the data.** Round honestly: "over eight and a half thousand" on the voice, 8,558 on screen.
@@ -94,13 +96,13 @@ uv run <skill>/scripts/voice.py <project> --design "calm, curious British narrat
 uv run <skill>/scripts/voice.py <project> --save 2        # keep preview 2; prints the id for narration.json
 ```
 
-It prints each line's end time, the words per minute, the character count (what ElevenLabs bills) and every cue's time. Check that the pace is 140–175 wpm and every cue was found. Re-running regenerates every line, so fix the text first and run it once. A video built on a `--silent` draft keeps working when the real voice replaces it, because the page reads all its times from the timeline.
+It prints each line's end time, the words per minute, the character count (what ElevenLabs bills) and every cue's time. Check that every cue was found and that the voice's length plus about 2.6 s (the end card) fits the target. If it runs long, cut words rather than speeding the voice up. Each line is cached in `out/lines/`, so editing one line re-bills only that line; delete a line's file there to get a new take. A video built on a `--silent` draft keeps working when the real voice replaces it, because the page reads all its times from the timeline.
 
 ## 6. Storyboard and art direction
 
-This step decides whether the video looks made or generated. A 30-second video that holds attention is 4–6 scenes in one world, not one chart that changes colour.
+This step decides whether the video looks made or generated, and whether it holds attention. A dynamic video is a shot list of 20–35 shots in 30 s (read `references/motion.md` now). A calm one is 4–6 scenes in one world. Never make one chart that just changes colour.
 
-**Storyboard.** Write `storyboard.md` before any code. Give it one row per line of the script, with:
+**Storyboard.** Write `storyboard.md` before any code. For a dynamic video, use the shot-list table in `references/motion.md`. For a calm one, give it one row per line of the script, with:
 - the line's time from the timeline and its words;
 - the scene;
 - what changes on screen at each cue;
@@ -109,15 +111,17 @@ This step decides whether the video looks made or generated. A 30-second video t
 Check the storyboard against four rules:
 - **One visual thread from the first frame to the last.** The camera travels through one world (a globe, a map, a timeline, an object) rather than flipping slides. Scenes change by moving through it: fly to a place, zoom through, slice it open, turn it, or rearrange the same marks into a new chart.
 - **Dense, real data.** Draw the actual measurements as marks: every year's value, every station, every event, hundreds or thousands of them. Then pull out the one that matters. A few big shapes say nothing the voice doesn't.
-- **A change every 1.5–2.5 s,** each landing on a cue.
-- **A climax about two-thirds of the way in.** The most surprising number gets the biggest visual move and the `riser` + `hit`.
+- **An event on every cue.** No more than 1.5 s between events in a dynamic video, or 2.5 s in a calm one.
+- **A climax between halfway and two-thirds of the way in.** The most surprising number gets the biggest visual move and the `riser` + `hit`.
 
 **Direction.** Name the look after a real-world medium, for example:
 - a NASA mission briefing;
 - a risograph data poster;
 - a painted museum atlas;
 - a seismograph printout;
-- a glass planetarium globe.
+- a glass planetarium globe;
+- a flat cartoon with soft glows in deep space;
+- a bold paper-and-ink motion poster with one accent colour.
 
 Write it down as:
 - a palette of 3–5 colours;
@@ -130,9 +134,9 @@ Write it down as:
 
 **Quality bar.** Check every frame against it, on the contact sheet and against the targets:
 - **Depth:** a background with texture or relief, the data in the middle, labels and HUD in front. Never flat shapes on a flat gradient.
-- **Hierarchy:** one huge number or word per scene, small precise labels with leader lines to what they name, and a quiet legend or source line.
+- **Hierarchy:** one huge number or word per scene, small precise labels with leader lines to what they name (`label()`), and a quiet legend or source line.
 - **Craft:** textures prebuilt in `init` (relief shading, paper grain, hatching, halftone), consistent line weights, tabular numerals in counters (`tabular()`), no system font.
-- **Motion:** staggered entrances, springs and eases, and camera moves between scenes. Nothing is linear, and nothing appears without an animation.
+- **Motion:** staggered entrances, springs and eases, and transitions that move through the world (`scenes()`). Nothing is linear, and nothing appears without an animation. In a dynamic video the key words slam in big (`stamp()`), and the hits flash and shake.
 
 ## 7. Build the page
 
@@ -145,7 +149,7 @@ The page is `index.html` with `<canvas id="out" width="1080" height="1920">`, th
 
 Compose for a phone:
 1. **Safe area.** On 9:16, platform buttons and captions cover the bottom ~360 px and the right ~120 px: keep text and key data inside x 60–950, y 130–1560.
-2. **One focal thing at a time,** and big type: numbers 60 px and up, labels 28 px and up at 1080 wide. If a label can't be read on the 270 px-wide contact-sheet thumbnail, it's too small.
+2. **One focal thing at a time,** and big type at 1080 wide: numbers 60 px and up, labels 32 px and up, nothing under 28 px. Judge legibility on a frame scaled to 360 px wide, about a phone's size. The 270 px contact-sheet thumbnails are for composition, not reading.
 3. **Land each visual on its cue,** on the word's frame or up to 0.1 s before, with its sound cue on the same time. Something should change every 1.5–2.5 s, and the camera never quite holds still (`camPath` drifts).
 4. **Show it with the data.** Dots are the real records and sizes and positions are true; a label names the real thing (`references/data.md`).
 5. **Subtitles,** word by word with `drawSubs`, inside the safe area. Many people watch muted. It shows at most `maxLines` (2) lines of a sentence at a time and pages through long sentences, but sentences of 12 words or fewer read best.
@@ -191,4 +195,5 @@ ffprobe -v error -show_entries stream=codec_type,width,height,duration -of compa
 - **Straight chords cut across a projected map.** A polygon clipped to a box in lon/lat has long straight edges that bend when projected (polar, orthographic). Densify edges before projecting (e.g. shapely `segmentize(1)`, in degrees).
 - **The render is slow.** Large gradients, `shadowBlur` on many shapes and `getImageData` cost the most. Draw static layers once in `init` to an offscreen canvas (`mk(w, h)`) and `drawImage` them per frame.
 - **WebGL is missing or black on a Linux server.** `render.py` asks Chrome for SwiftShader there. It works but slowly; on a laptop use the GPU.
+- **A zoom-through transition jumps to the wrong place.** `focus` runs outside the shot's `draw`, so a shot with a moving camera must set `CAM` in its `focus` too (`references/engine.md`).
 - **The video is cropped to 1833 px tall.** Chrome caps a viewport resized after launch. `render.py` reads the size from the literal `<canvas id="out" width height>` tag, so keep those attributes in `index.html`.

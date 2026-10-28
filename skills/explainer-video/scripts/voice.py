@@ -8,8 +8,10 @@
 #        voice.py <dir> --silent                    no API call: silent track, words timed at ~150 wpm (layout drafts, no key)
 #        voice.py <dir> --design "<description>"    3 designed voices read the script -> <dir>/out/voices/preview_N.mp3
 #        voice.py <dir> --save N                    keep preview N in your ElevenLabs voices; prints the id for narration.json
+# Each line's audio is cached in <dir>/out/lines/ by voice, model and text, so editing one line only re-bills that line.
+# Delete a line's cache file (or the folder) to get a new take.
 # The key comes from ELEVENLABS_API_KEY (or ELEVEN_LABS_KEY, ...) in the environment or in a .env in <dir> or a parent folder.
-import base64, json, os, re, subprocess, sys, urllib.request
+import base64, hashlib, json, os, re, subprocess, sys, urllib.request
 import numpy as np, soundfile as sf
 
 SR = 44100
@@ -55,7 +57,11 @@ assert abs(len(cut_bleed(_t, 0)) / SR - .31) < .001 and len(cut_bleed(_t[:int(.3
 
 def tts(text, prev, nxt):
     body = {"text": text, "model_id": MODEL, "previous_text": prev, "next_text": nxt, "voice_settings": {"stability": .5, "similarity_boost": .75}}
-    r = api(f"/v1/text-to-speech/{VOICE}/with-timestamps?output_format=mp3_44100_128", body)
+    cache = f"{OUT}/lines/{hashlib.sha1(f'{VOICE}|{MODEL}|{text}'.encode()).hexdigest()[:12]}.json"
+    if os.path.exists(cache): r = json.load(open(cache))
+    else:
+        r = api(f"/v1/text-to-speech/{VOICE}/with-timestamps?output_format=mp3_44100_128", body)
+        os.makedirs(f"{OUT}/lines", exist_ok=True); json.dump(r, open(cache, "w")); BILLED[0] += len(text)
     pcm = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", "-", "-f", "f32le", "-ac", "1", "-ar", str(SR), "-"],
                          input=base64.b64decode(r["audio_base64"]), capture_output=True, check=True).stdout
     al = r["alignment"]; assert al, "no alignment returned"
@@ -72,6 +78,8 @@ def tts(text, prev, nxt):
     head, tail = max(idx[0] - int(.005 * SR), 0), min(idx[-1] + int(.01 * SR), len(a))
     words = [(w, max(0.0, s - head / SR)) for w, s in words]
     return cut_bleed(a[head:tail], words[-1][1]), words
+
+BILLED = [0]  # characters sent to ElevenLabs this run (cached lines are free)
 
 def silent(text):  # ~150 wpm, longer words take longer
     ws = text.split(); dur = [.16 + .045 * len(w) for w in ws]; t = np.concatenate([[0], np.cumsum(dur)])
@@ -110,5 +118,5 @@ voice = np.concatenate(out)
 sf.write(f"{OUT}/voice.wav", voice, SR)
 json.dump({"duration": round(len(voice) / SR, 3), "sentences": sentences, "triggers": triggers}, open(f"{OUT}/timeline.json", "w"), indent=1)
 nw = sum(len(l["text"].split()) for l in LINES); speech = sum(s["end"] - s["start"] for s in sentences)
-print(f"voice {len(voice) / SR:.2f}s, speech {speech:.2f}s, {nw / speech * 60:.0f} wpm, {sum(len(l['text']) for l in LINES)} characters")
+print(f"voice {len(voice) / SR:.2f}s, speech {speech:.2f}s, {nw / speech * 60:.0f} wpm, {BILLED[0]} characters billed")
 for k, v in triggers.items(): print(f"{v:6.2f}  {k}")

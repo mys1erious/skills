@@ -71,7 +71,11 @@ It:
 - generated two target frames for the look and built the page to match them;
 - checked contact sheets and frames before rendering the 28-second video with voice, music and sound.
 
-What it found missing went back into the skill.
+A second fresh agent got a faster brief: "what happens in your body in the split second after you touch a hot stove, super dynamic, TikTok style". It made a 33-second ride from the fingertip through the nerve to the spinal cord and brain. A slow-motion millisecond clock runs throughout, the signals are characters that move at their measured speeds, and every number comes from published measurements:
+
+![Six frames of a fast-cut TikTok on the reflex after touching a hot stove, built by a fresh agent with the explainer-video skill](docs/explainer-video-dynamic.jpg)
+
+What both agents found missing went back into the skill.
 
 **Ask it for things like:**
 - "Make a 30-second TikTok that shows how earthquakes reveal the tectonic plates, with real USGS data."
@@ -81,7 +85,11 @@ What it found missing went back into the skill.
 
 **What's inside:**
 - **A workflow** in `SKILL.md`: brief, script, data, voice, page, checking by looking, render, and the pitfalls behind each step.
-- **An engine** (`assets/engine.js`): every frame is a function of time. It has motion blur, grain, springs, a camera, captions and word-by-word subtitles.
+- **An engine** (`assets/engine.js`): every frame is a function of time. It has:
+  - motion blur, grain, springs and a camera;
+  - shots with zoom-through and whip transitions;
+  - kinetic type, shake, flash and glow;
+  - callouts, captions and word-by-word subtitles.
 - **A starter** (`assets/starter/`): a 12-second video with real data to copy.
 - **`scripts/voice.py`:** narration to voice and word timeline with ElevenLabs, voice design, and silent drafts without a key.
 - **`scripts/render.py`:** contact sheets, frames and the video, made frame by frame in headless Chrome.
@@ -90,6 +98,7 @@ What it found missing went back into the skill.
 - **References:**
   - `engine.md`: the API, sounds and performance;
   - `data.md`: sources and the truth rules for what goes on screen;
+  - `motion.md`: TikTok pacing, with a new shot every second, impact and a character;
   - `styles.md`: several styles built in parallel and compared.
 
 **Requirements:** Python 3.10+ with [uv](https://docs.astral.sh/uv/) (or pip), ffmpeg, and Google Chrome or Playwright's Chromium. The voice needs an ElevenLabs API key, and style targets a Gemini key. Without them it still makes silent drafts.

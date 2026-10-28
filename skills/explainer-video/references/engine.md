@@ -4,7 +4,7 @@
 
 ## Globals (never redeclare)
 
-`out octx W H FPS TAU mk scene ctx glc gl THEME TL SCENE FONT clamp lerp easeInOutCubic easeOutQuint easeOutCubic easeInCubic smooth spring kick rng at camPath CAM w2s GRAIN VIG buildStatic rr setFont caption tabular drawSubs start`, plus `seek`, `ready`, `DURATION`, `TITLE`, `BEATS`, `SFX`, `MUSIC`, `MARKS`, `GPU` on `window`.
+`out octx W H FPS TAU mk scene ctx glc gl THEME TL SCENE FONT clamp lerp easeInOutCubic easeOutQuint easeOutCubic easeInCubic smooth spring kick rng at camPath CAM w2s GRAIN VIG buildStatic rr setFont caption tabular slam stamp rise label glow shake flash layer LA LB scenes drawSubs start`, plus `seek`, `ready`, `DURATION`, `TITLE`, `BEATS`, `SFX`, `MUSIC`, `MARKS`, `GPU` on `window`.
 
 You may assign to `CAM`, `ctx` (swap it to draw offscreen, then restore it) and `FONT`, and you may change `THEME`'s fields.
 
@@ -59,6 +59,15 @@ You may assign to `CAM`, `ctx` (swap it to draw offscreen, then restore it) and 
 | `setFont(weight, size, letterSpacing=0, family=FONT)` | Sets `ctx.font` and `ctx.letterSpacing`. |
 | `caption(t, lines, x, y, tIn, tOut, o)` | A pill of lines `{text, size, color, weight, sp}` centred at (x, y). It springs in at `tIn`, each line rises through a clip, and it leaves at `tOut`. `o.align`: `'center'` (default), `'left'` or `'right'`, with x as that edge. `o.fill` sets the pill colour (`'rgba(0,0,0,0)'` for none); also `padX`, `padY`, `gap`, `minW`, `scale`. |
 | `tabular(text, x, y, align='left')` | Draws text with every digit in an equal-width cell, so a changing counter doesn't jitter. Set the font first. |
+| `stamp(t, t0, str, x, y, size, o)` | Kinetic type: a word slams in at `t0`, centred on (x, y), overshooting from 1.5× and settling, and shrinks away at `o.out`. `o`: `out`, `weight`, `color`, `box` (fill behind it), `pad`, `r`, `rot`, `amt`, `sp`, `family`. `slam(t, t0, amt)` is its scale, for anything else. |
+| `rise(t, t0, str, x, y, size, o)` | A line rising into place through a clip at `t0` (y is the baseline), dropping out at `o.out`. `o`: `align`, `weight`, `color`, `dur`, `out`, `sp`, `family`. Returns the width. |
+| `label(t, t0, text, x, y, tx, ty, o)` | A callout: a dot pops on the target (tx, ty), a leader line draws out to (x, y), then the text springs in on a pill. `o`: `size` (30), `color`, `fill`, `line`, `align` (`'left'`: text to the right of x; `'right'`: to its left), `out`. |
+| `glow(x, y, r, color, a=1)` | A soft additive glow from a cached sprite. Use it instead of `shadowBlur`, which is slow. |
+| `shake(t, t0, amp=16)` | `{x, y}` to translate by after a hit at `t0`; it decays in about 0.4 s. |
+| `flash(t, t0, dur=.25, color)` | An impact frame: the whole frame flashes at `t0` and fades. |
+| `scenes(t, shots, o)` | Shots and transitions. `shots = [{t0, draw(t), tr, focus(t), focusIn(t)}]`; `tr` is `'in'` (zoom into `focus`, the next shot opens through a circle), `'out'` (shrink into a closing circle, revealing the next), `'whip'` or `'cut'`. `o.dur` is half the transition (0.28 s), `o.ring` the circle's edge colour (`null` for none). Each shot paints the whole frame. See `motion.md`. |
+| (camera in shots) | `focus` and `focusIn` are called outside the shot's `draw`. If a shot moves the camera, put the camera in a function of `t` (`const cam2 = t => camPath(t, …)`), set `CAM = cam2(t)` in both the shot's `draw` and its `focus` before calling `w2s`. |
+| `layer(cv, fn)` | Runs `fn` with `ctx` pointing at the offscreen canvas `cv` (cleared first), for your own compositing. `LA` and `LB` are the two used by `scenes`. |
 | `drawSubs(t, y, o)` | Word-by-word subtitles of the sentence being spoken, centred at `y`. `o`: `size` (46), `maxW`, `maxLines` (2: a longer sentence shows a page at a time), `upper` (true), `fill` (`null` for no pill), `now`, `past`, `next` colours. Defaults come from `THEME`. |
 
 Write your own versions when the look needs it (a typewriter caption, subtitles on a paper strip); these are starting points, not a style.
