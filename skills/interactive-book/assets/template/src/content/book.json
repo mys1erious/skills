@@ -1,0 +1,16 @@
+{
+  "title": "Balance",
+  "overline": "An example book",
+  "subtitle": "Why a seesaw levels out",
+  "tagline": "A 3D book in one lesson: replace it with yours",
+  "description": "Balance: an interactive 3D book. Each lesson is a spread whose figure lifts off the page as an ink drawing you can play with.",
+  "imprint": "Every claim has a source at the back",
+  "cover": "#cf9a22",
+  "ribbon": "#23345e",
+  "lessons": [
+    "Balancing a seesaw"
+  ],
+  "legend": [
+    { "note": "Masses on the seesaw.", "items": [{ "name": "load", "color": "#e07a2f" }, { "name": "counterweight", "color": "#2a9d8f" }] }
+  ]
+}

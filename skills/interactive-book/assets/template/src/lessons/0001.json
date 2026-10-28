@@ -1,0 +1,62 @@
+{
+  "n": 1,
+  "title": "Balancing a seesaw",
+  "runningHead": "Weight and distance",
+  "why": "A seesaw, a spanner and a crane all turn about a point. What makes one side go down is the first idea of statics.",
+  "idea": [
+    "A weight on a seesaw turns it about the pivot. How hard it turns depends on two things: how heavy it is, and how far it sits from the pivot.",
+    "Multiply them and you get its moment. When the moments on both sides are equal, the seesaw stays level."
+  ],
+  "principle": "weight × distance on the left = weight × distance on the right",
+  "keywords": ["pivot", "moment", "equilibrium"],
+  "predict": {
+    "question": "You slide the 3 kg counterweight from 1 m out to 4 m. What happens?",
+    "options": [
+      "the load side drops",
+      "nothing changes at all",
+      "the counterweight side drops"
+    ],
+    "answer": 2
+  },
+  "explain": "The counterweight side drops. A weight turns harder the further it sits from the pivot: at 4 m the counterweight's moment is 3 kg × 4 m = 12, against the load's 2 kg × 3 m = 6. Distance counts as much as weight.",
+  "watch": [
+    "A 2 kg load sits 3 m left of the pivot. A 3 kg counterweight sits 4 m out on the right.",
+    "Each side turns the plank with weight times distance: 6 on the left, 12 on the right.",
+    "Slide the counterweight in to 1 m and it turns with only 3. Now the load wins.",
+    "At 3 m it turns with 9: closer to 6, but still too much.",
+    "Your turn: find where the counterweight balances the load."
+  ],
+  "watchShots": [
+    { "kind": "wide", "show": "the whole seesaw, right side down" },
+    { "kind": "close", "show": "the two moment labels" },
+    { "kind": "cutaway", "show": "the counterweight at 1 m, left side down" },
+    { "kind": "angle", "show": "the counterweight at 3 m, from low on the right" },
+    { "kind": "handover", "show": "back to the reading view, counterweight at 4 m" }
+  ],
+  "figure": "a seesaw with a load and a counterweight",
+  "tryHint": "Move the counterweight until the plank is level.",
+  "itemsHeading": "The weights",
+  "switches": [
+    { "id": "at", "label": "weight at:", "options": ["1 m", "2 m", "3 m", "4 m"] }
+  ],
+  "buttons": [
+    { "id": "slide", "label": "▸ slide", "text": "Slide the counterweight one metre further out" }
+  ],
+  "challenge": {
+    "text": "Find where the counterweight balances the load.",
+    "done": "Seesaw balanced"
+  },
+  "margin": {
+    "lines": ["{left}", "{right}", "{verdict}", "{sel}"],
+    "fields": {
+      "left": "the load's moment (margin().left)",
+      "right": "the counterweight's moment (margin().right)",
+      "verdict": "which side drops, or level (margin().verdict)",
+      "sel": "the weight the reader tapped (margin().sel)"
+    }
+  },
+  "idealised": "The plank weighs nothing and sits exactly on its middle, and the weights are points at whole metres. A real plank has its own weight and a real seesaw has friction at the pivot.",
+  "readNext": "openstax-equilibrium",
+  "readNextLabel": "Conditions for Static Equilibrium (OpenStax), free textbook",
+  "sources": ["openstax-equilibrium", "wikipedia-lever"]
+}

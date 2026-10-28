@@ -15,6 +15,7 @@ npx skills add mys1erious/skills
 | Skill | What it does | Install one |
 |---|---|---|
 | [ascii-art](skills/ascii-art) | Builds ASCII art that looks designed: animated and interactive canvas pieces, image, logo and text to ASCII, plain-text art, and loopable videos for X. Tests what it builds in headless Chrome. | `npx skills add mys1erious/skills --skill ascii-art` |
+| [interactive-book](skills/interactive-book) | Builds an interactive 3D book that teaches any topic, one lesson per spread: predict, lift the flap, play with an ink-drawn figure, meet the challenge. Tests it in headless Chrome, publishes it to GitHub Pages and records a captioned video for X. | `npx skills add mys1erious/skills --skill interactive-book` |
 
 ## ascii-art
 
@@ -54,6 +55,65 @@ It also checked its own work in headless Chrome. Six rounds of screenshots caugh
 
 **What it sends where:** nothing leaves your machine. The pieces it builds load no external resources. The scripts start a local headless browser with a temporary profile, then delete the profile.
 
+## interactive-book
+
+![An interactive 3D book on sorting algorithms: a page turns, numbered blocks swap places in bubble sort, then merge sort moves them down a merge tree](docs/interactive-book.gif)
+
+The clip above came from one prompt to a fresh agent that had only this skill:
+
+> make me an interactive 3D book that teaches how sorting algorithms work, for complete beginners. 3 lessons is enough for now. I want to share it with people and post a short video of it on X
+
+It built:
+- a book in three lessons: bubble sort, selection sort and merge sort. Eight numbered blocks run through all three, and the margin counts comparisons so the methods can be compared;
+- a 40-second 1920×1080 video for X, cut from the lessons' captioned camera tours.
+
+It checked its own work with 13 model tests and 14 browser tests, and by looking at screenshots of every spread and every camera shot. The screenshots caught what the tests didn't:
+- a row of blocks that rose off the top of the page;
+- tour shots that cropped their subject;
+- two blocks that passed through each other mid-move.
+
+Its 11 notes on the skill went back into it, among them a tap bug in the template, a rule for how far back tall things can stand, and the space budget at the bottom of a page.
+
+**Ask it for things like:**
+- "Make a 3D book that teaches how vaccines train the immune system, for 12-year-olds."
+- "Turn my /teach lessons on SQL joins into an interactive book."
+- "Add a lesson on quicksort to the book, same style as the others."
+- "Record a 30-second video of lessons 2 and 5 for X."
+- "Publish the book on GitHub Pages."
+
+**What's inside:**
+- **A workflow** in `SKILL.md`:
+  1. the brief and the outline, approved before building;
+  2. research and sources;
+  3. one lesson at a time;
+  4. composition rules for the 3D figure;
+  5. checking by tests and by looking;
+  6. publishing;
+  7. the video.
+- **A template book** (`assets/template/`): Vite and three.js, with one example lesson (a seesaw). It has:
+  - window light, soft shadows and a hatched ink material;
+  - page turns;
+  - printed switches and buttons, and things to tap in 3D;
+  - the flap, the challenge stamp and the Watch tour;
+  - a text version that passes axe.
+- **Tests:** model tests in node. Browser tests that open every spread, sweep every control, lint the content, run the tour, fuzz random clicks and keys, and check the text version with axe.
+- **Scripts:**
+  - `shoot.mjs`: screenshots of every spread, every camera shot and mid-move frames, with contact sheets;
+  - `record.mjs`: a frame-exact video on a paused clock;
+  - `deploy-pages.sh`: GitHub Pages, writing only the `gh-pages` branch;
+  - `artifact-page.mjs`: a claude.ai Artifact.
+- **References** the agent reads when it needs them:
+  - `lessons.md`: every field and the rules the tests enforce;
+  - `scenes.md`: the scene contract, the kit and camera shots;
+  - `look.md`: the renderer and the review method;
+  - `video.md`: recording, cutting and the post.
+
+**Requirements:** Node 22+ and npm. The first install fetches three.js, Vite, Playwright and Playwright's Chromium. MP4 export needs ffmpeg, and publishing needs the gh CLI. Headless WebGL is fast on macOS (Metal) and slow on Linux (software rendering).
+
+**What it sends where:** building and testing run locally. npm downloads packages from the npm registry. The book itself loads nothing from other sites: its fonts are bundled. Publishing pushes the built book to the GitHub repo you name.
+
+The look follows [Every Joule](https://github.com/iamtechartist/every-joule-lesson1) by [@techartist_](https://x.com/techartist_). The template is our own code; none of Every Joule's is used.
+
 ## Install
 
 <details>
@@ -63,6 +123,7 @@ It also checked its own work in headless Chrome. Six rounds of screenshots caugh
 npx skills add mys1erious/skills                                   # choose skills and agents
 npx skills add mys1erious/skills --list                            # see what's here
 npx skills add mys1erious/skills --skill ascii-art -a claude-code -g -y
+npx skills add mys1erious/skills --skill interactive-book -a claude-code -g -y
 ```
 
 Run `npx skills update` to update.
@@ -74,6 +135,7 @@ Run `npx skills update` to update.
 ```
 /plugin marketplace add mys1erious/skills
 /plugin install ascii-art@mys1erious
+/plugin install interactive-book@mys1erious
 ```
 
 Run `/plugin marketplace update mys1erious` to update.
@@ -82,7 +144,7 @@ Run `/plugin marketplace update mys1erious` to update.
 <details>
 <summary><b>Manual copy</b></summary>
 
-Copy `skills/ascii-art/` into your agent's skills folder:
+Copy a skill's folder, such as `skills/ascii-art/`, into your agent's skills folder:
 
 | Agent | Your user | One project |
 |---|---|---|
@@ -97,7 +159,8 @@ Copy `skills/ascii-art/` into your agent's skills folder:
 Every pull request:
 - validates each skill against the [Agent Skills spec](https://agentskills.io/specification);
 - validates the Claude Code marketplace;
-- renders the ascii-art starter in headless Chrome, and fails on any page error.
+- renders the ascii-art starter in headless Chrome, and fails on any page error;
+- builds the interactive-book template, runs its model tests, and opens every spread in headless Chromium, failing on any page error or text that runs off a page.
 
 ## License
 

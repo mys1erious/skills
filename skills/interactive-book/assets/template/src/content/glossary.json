@@ -1,0 +1,14 @@
+{
+  "pivot": {
+    "term": "pivot",
+    "definition": "the point a seesaw turns about"
+  },
+  "moment": {
+    "term": "moment",
+    "definition": "how hard a weight turns the seesaw: its weight times its distance from the pivot"
+  },
+  "equilibrium": {
+    "term": "balance",
+    "definition": "the moments on both sides are equal, so the seesaw stays level"
+  }
+}
