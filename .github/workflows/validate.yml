@@ -26,3 +26,10 @@ jobs:
         run: npx -y @anthropic-ai/claude-code@2.1.296 plugin validate .
       - name: ascii-art starter renders without page errors
         run: node skills/ascii-art/scripts/shoot.mjs "file://$PWD/skills/ascii-art/assets/starter.html?clean" "$RUNNER_TEMP/ascii" --times 3 --actions "glide 30%,40%; down; wait 600; up; wait 200; shot release; text frame"
+      - name: explainer-video starter renders without page errors
+        run: |
+          d="$RUNNER_TEMP/explainer" && mkdir -p "$d/fonts"
+          cp skills/explainer-video/assets/engine.js skills/explainer-video/assets/starter/* "$d/"
+          curl -sfL -o "$d/fonts/InterTight.ttf" "https://github.com/google/fonts/raw/main/ofl/intertight/InterTight%5Bwght%5D.ttf"
+          uv run skills/explainer-video/scripts/voice.py "$d" --silent
+          uv run skills/explainer-video/scripts/render.py "$d" sheet

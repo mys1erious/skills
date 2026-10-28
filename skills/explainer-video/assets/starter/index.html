@@ -1,0 +1,72 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Earth's water in 1,000 drops</title>
+<style>html, body { margin: 0; background: #000; } canvas { display: block; }</style></head>
+<body><canvas id="out" width="1080" height="1920"></canvas>
+<script src="engine.js"></script>
+<script>
+// Starter: a 10-second explainer that shows its number with the real data. Replace the data, the cues, init() and draw().
+// Data: USGS Water Science School, "Where is Earth's water?" (Gleick 1996): fresh water is 2.5% of all water on Earth,
+// ice caps, glaciers and permanent snow 1.74%. So out of 1,000 drops, 25 are fresh and 17 of those are frozen.
+const DROPS = 1000, FRESH = 25, ICE = 17;
+const COLS = 25, GAP = 28, GX = W / 2 - (COLS - 1) * GAP / 2, GY = 330; // 25 x 40 grid inside the safe area
+const T = {}, BG = ['#06121f', '#0c2340'], SALT = '#2f78c4', DIM = '#173a63', FRESHC = '#8fe6ff', ICEC = '#f4fbff';
+let DROP = []; // one record per drop, built once in init
+
+function init(tl) {
+  T.thousand = at('0:thousand'); T.fresh = at('1:twenty'); T.seventeen = at('2:seventeen'); T.frozen = at('2:frozen');
+  T.title = tl.sentences.at(-1).end + .35;
+  const r = rng(3), idx = [...Array(DROPS).keys()];
+  for (let i = DROPS - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; } // seeded shuffle
+  const fresh = new Map(idx.slice(0, FRESH).map((d, k) => [d, k])); // drop -> its slot in the 5 x 5 fresh cluster
+  DROP = idx.map((_, i) => {
+    const k = fresh.get(i);
+    return { x: GX + (i % COLS) * GAP, y: GY + Math.floor(i / COLS) * GAP, land: r() * (T.thousand - .4), k,
+      cx: W / 2 + ((k ?? 0) % 5 - 2) * 62, cy: 860 + (Math.floor((k ?? 0) / 5) - 2) * 62 };
+  }).sort((a, b) => (a.k != null) - (b.k != null)); // fresh drops last, so they draw on top
+  const sfx = [], bins = new Set(DROP.map(d => Math.floor(d.land * 12))); // one soft thump per 1/12 s with landings
+  for (const b of bins) sfx.push(['thump', b / 12 + .3]);
+  sfx.push(['pin', T.thousand], ['whoosh', T.fresh], ['frost', T.frozen], ['reveal', T.title]);
+  const duration = T.title + 2.6;
+  return { duration, title: T.title, music: 'pad', sfx,
+    beats: [['hook', .5], ['rain', T.thousand - .4], ['thousand', T.thousand + .5], ['fresh', T.fresh + .9], ['seventeen', T.seventeen + .3],
+      ['frozen', T.frozen + .6], ['title', T.title + .8], ['end', duration - .1]] };
+}
+
+function draw(t) {
+  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, BG[0]); g.addColorStop(1, BG[1]);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  CAM = camPath(t, { x: W / 2, y: H / 2, z: 1 }, [[T.fresh - .2, 1.4, { y: 900, z: 1.12 }], [T.title - .4, 1.2, { y: H / 2, z: 1 }]]);
+  const fade = smooth(T.title - .3, T.title + .5, t); // the grid fades for the end card
+  for (const d of DROP) {
+    const p = clamp((t - d.land) / .35); if (p <= 0) continue;
+    const isFresh = d.k != null, isIce = isFresh && d.k < ICE;
+    const m = isFresh ? spring(t - T.fresh - d.k * .025, .5, 11) : 0; // fresh drops fly to the cluster
+    const s = w2s({ x: lerp(d.x, d.cx, m), y: lerp(d.y - (1 - easeInCubic(p)) * 420, d.cy, m) });
+    const sq = .35 * kick(t - d.land - .35, .4, 18), rad = (isFresh ? lerp(8, 22, m) : 8) * CAM.z;
+    ctx.globalAlpha = p * (1 - fade);
+    if (m > .01) { ctx.fillStyle = BG[0]; ctx.beginPath(); ctx.arc(s.x, s.y, rad + 8 * m, 0, TAU); ctx.fill(); } // cut out the grid behind it
+    if (isIce && t > T.frozen) { // frozen: a crystal that spins in
+      const f = spring(t - T.frozen - d.k * .03, .45, 13);
+      ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(TAU / 8 * f); ctx.fillStyle = ICEC; ctx.shadowColor = '#bfefff'; ctx.shadowBlur = 24 * f;
+      ctx.fillRect(-rad * .8, -rad * .8, rad * 1.6, rad * 1.6); ctx.restore();
+    } else {
+      ctx.fillStyle = isFresh && t > T.fresh ? FRESHC : t > T.fresh ? DIM : SALT;
+      ctx.beginPath(); ctx.ellipse(s.x, s.y, rad * (1 + sq), rad * (1 - sq), 0, 0, TAU); ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+  // labels: every number on screen is the number the voice says
+  caption(t, [{ text: '1,000 DROPS', size: 64, color: '#ffffff', weight: 800 }, { text: "ALL OF EARTH'S WATER", size: 30, color: '#8fd8e6' }], W / 2, 190, T.thousand, T.title - .4);
+  caption(t, [{ text: '25 FRESH · 2.5%', size: 52, color: FRESHC, weight: 800 }], W / 2, w2s({ x: 0, y: 690 }).y, T.fresh + .3, T.seventeen - .1);
+  caption(t, [{ text: '17 FROZEN', size: 52, color: ICEC, weight: 800 }, { text: 'ICE CAPS, GLACIERS, SNOW', size: 28, color: '#8fd8e6' }], W / 2, w2s({ x: 0, y: 1060 }).y, T.frozen, T.title - .4);
+  if (t < T.title) drawSubs(t, 1490);
+  if (t > T.title - .2) { // end card: the takeaway and the source, held to the end
+    caption(t, [{ text: 'ONLY 2.5% OF', size: 72, color: '#ffffff', weight: 800 }, { text: "EARTH'S WATER", size: 72, color: '#ffffff', weight: 800 },
+      { text: 'IS FRESH', size: 72, color: FRESHC, weight: 800 }], W / 2, 860, T.title, 1e9, { fill: 'rgba(0,0,0,0)' });
+    caption(t, [{ text: 'DATA: USGS WATER SCIENCE SCHOOL (GLEICK 1996)', size: 24, color: '#8fd8e6', weight: 500, sp: 2 }], W / 2, 1180, T.title + .5);
+  }
+}
+
+start({ init, draw, fonts: [['Inter Tight', 'fonts/InterTight.ttf', '100 900']] });
+</script>
+</body></html>
