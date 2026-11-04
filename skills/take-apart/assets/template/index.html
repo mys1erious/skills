@@ -1,0 +1,941 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Voyager 1, taken apart</title>
+<meta name="description" content="Voyager 1 at real scale, taken apart piece by piece: the 3.66 m dish, the ten-sided bus, three RTGs, the 13 m magnetometer boom, the science boom, two 10 m antennas and the Golden Record. Tap a part for what it does and what still works.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/inter-tight@5.3.0/index.css">
+<style>
+  :root { --u: min(1vw, .8vh); --g: 16px; --gold: #ffd58c; --ink: #f1f4fa; --dim: #8e9bb4; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; background: #010207; color: var(--ink); overflow: hidden;
+    font: 400 15px/1.3 "Inter Tight Variable", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; font-feature-settings: "tnum" 1, "cv11" 1; }
+  canvas { position: fixed; inset: 0; display: block; touch-action: none; }
+  .hud { position: fixed; inset: 0; pointer-events: none; }
+  .shade { position: absolute; inset: 0; background:
+    radial-gradient(ellipse 80% 70% at 50% 55%, rgba(1,2,7,0) 55%, rgba(1,2,7,.55) 100%),
+    linear-gradient(rgba(1,2,7,.85) 0, rgba(1,2,7,.35) 14%, rgba(1,2,7,0) 26%, rgba(1,2,7,0) 78%, rgba(1,2,7,.6) 100%); }
+  .top { position: absolute; left: var(--g); right: var(--g); top: calc(var(--g) + 2.2 * var(--u)); text-align: center; text-shadow: 0 1px 3px rgba(1,2,7,.9), 0 0 18px rgba(1,2,7,.85); }
+  .kicker { font-size: clamp(10px, 1.6 * var(--u), 18px); letter-spacing: .32em; text-transform: uppercase; color: var(--gold); font-weight: 600; padding-left: .32em; }
+  h1 { font-size: clamp(30px, 7 * var(--u), 82px); font-weight: 250; letter-spacing: -.03em; line-height: 1.02; margin-top: .22em; color: #fff;
+    text-shadow: 0 0 calc(4 * var(--u)) rgba(255, 214, 150, .14); }
+  h1 b { font-weight: 600; color: var(--gold); }
+  .sub { font-size: clamp(13px, 2.2 * var(--u), 25px); color: #c9d2e3; max-width: 36em; margin: .55em auto 0; line-height: 1.3; }
+  .gauge { margin: calc(1.4 * var(--u)) auto 0; width: min(100%, 26em); font-size: clamp(11px, 1.7 * var(--u), 19px); text-align: left; }
+  .gauge div { display: flex; align-items: center; gap: .7em; margin-top: .45em; }
+  .gauge span { width: 3em; color: var(--dim); letter-spacing: .08em; }
+  .gauge i { display: block; height: .55em; border-radius: 99px; background: linear-gradient(90deg, #ffb347, var(--gold)); box-shadow: 0 0 .8em rgba(255,200,110,.35); }
+  .gauge em { font-style: normal; font-weight: 600; white-space: nowrap; }
+  .gauge small { display: block; margin-top: .5em; color: var(--dim); font-size: .9em; text-align: center; }
+  #ov { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  #ov path, #ov circle, #ov line { fill: none; vector-effect: non-scaling-stroke; }
+  #ov text { font: 600 13px "Inter Tight Variable", system-ui, sans-serif; letter-spacing: .06em; fill: #fff; paint-order: stroke; stroke: #010207; stroke-width: 4px; stroke-linejoin: round; }
+  .lbl { position: absolute; left: 0; top: 0; white-space: nowrap; will-change: transform, opacity; opacity: 0;
+    text-shadow: 0 1px 2px #000, 0 0 10px rgba(0,0,0,.9); }
+  .lbl b { display: block; font-size: clamp(10px, 1.45 * var(--u), 16px); font-weight: 600; letter-spacing: .14em; text-transform: uppercase; line-height: 1.25; color: #fff; }
+  .lbl i { display: block; font-style: normal; font-size: clamp(11px, 1.6 * var(--u), 18px); font-weight: 400; color: #c9d2e3; line-height: 1.25; margin-top: .2em; }
+  .lbl i.on { color: var(--gold); font-weight: 600; letter-spacing: .1em; }
+  .lbl.l { text-align: right; }
+  .lbl.sel b { color: var(--gold); }
+  .lbl s { display: none; text-decoration: none; }
+  .lbl.n b, .lbl.n i { display: none; }
+  .lbl.n s { display: block; width: 22px; height: 22px; border-radius: 50%; background: var(--gold); color: #120d03; font: 700 12px/22px "Inter Tight Variable", system-ui, sans-serif; text-align: center; text-shadow: none; }
+  .legend { display: none; }
+  .today { position: absolute; right: calc(var(--g) + 2 * var(--u)); top: 50%; transform: translateY(-38%); width: min(360px, 34vw); opacity: 0; }
+  .row { display: flex; align-items: baseline; gap: .7em; padding: .38em 0; border-top: 1px solid rgba(255,255,255,.09); font-size: clamp(11px, 1.55 * var(--u), 17px); opacity: 0; }
+  .row:first-child { border-top: 0; }
+  .row b { width: 3.4em; flex: none; font-weight: 600; letter-spacing: .1em; }
+  .row span { flex: 1; color: #c9d2e3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row em { font-style: normal; color: var(--dim); white-space: nowrap; }
+  .row.on b, .row.on em { color: var(--gold); }
+  .row.on em { font-weight: 600; letter-spacing: .12em; }
+  .row.pw { border-top: 1px solid rgba(255,213,140,.3); margin-top: .3em; }
+  .row.pw em { color: #fff; }
+  .scale { position: absolute; left: calc(var(--g) + 4px); bottom: calc(var(--g) + 70px); font-size: 12px; letter-spacing: .08em; color: #aeb8cc; }
+  .scale i { display: block; height: 6px; border: 1px solid rgba(255,255,255,.7); border-top: 0; margin-bottom: 5px; }
+  .src { position: absolute; right: calc(var(--g) + 4px); bottom: calc(var(--g) + 70px); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #5f6b82; text-align: right; }
+  .ui { position: fixed; left: var(--g); right: var(--g); bottom: var(--g); display: flex; gap: 8px; align-items: center; padding: 6px 12px 6px 6px;
+    background: rgba(12,16,28,.62); border: 1px solid rgba(255,255,255,.1); border-radius: 999px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); max-width: 760px; margin: 0 auto; }
+  .ui button { font: inherit; font-weight: 600; border: 0; border-radius: 999px; width: 44px; height: 44px; cursor: pointer; flex: none; }
+  #playBtn { color: #120d03; background: var(--gold); }
+  .ui .nav { background: rgba(255,255,255,.08); color: #fff; font-size: 18px; }
+  .ui input { flex: 1; min-width: 0; height: 44px; accent-color: var(--gold); }
+  .ui span { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); flex: none; white-space: nowrap; }
+  .card { position: fixed; left: var(--g); top: 50%; transform: translateY(-50%); width: min(360px, calc(100vw - 2 * var(--g))); max-height: calc(100vh - 160px); overflow: auto;
+    background: rgba(9,12,22,.86); border: 1px solid rgba(255,255,255,.12); border-radius: 14px; padding: 18px 18px 14px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+  .card[hidden] { display: none; }
+  .card .x { position: absolute; right: 8px; top: 8px; width: 36px; height: 36px; border: 0; border-radius: 99px; background: rgba(255,255,255,.08); color: #fff; font-size: 18px; cursor: pointer; }
+  .card .ck { font-size: 11px; letter-spacing: .26em; text-transform: uppercase; color: var(--gold); font-weight: 600; padding-right: 40px; }
+  .card h3 { font-size: 26px; font-weight: 350; letter-spacing: -.01em; margin-top: .2em; padding-right: 30px; }
+  .card .cs { color: var(--dim); font-size: 14px; margin-top: .25em; }
+  .card h4 { font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--dim); font-weight: 600; margin-top: 14px; }
+  .card p { font-size: 14.5px; line-height: 1.42; color: #dfe5f0; margin-top: 4px; }
+  .card .pill { display: inline-block; font-size: 10px; letter-spacing: .18em; font-weight: 700; padding: 3px 8px; border-radius: 99px; margin-right: 6px; vertical-align: 1px; background: rgba(255,255,255,.1); color: #c9d2e3; }
+  .card .pill.on { background: var(--gold); color: #120d03; }
+  .card .cn { color: var(--dim); font-size: 12.5px; font-style: italic; }
+  .card .csrc { margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.08); font-size: 12px; line-height: 1.6; }
+  .card .csrc a { color: #9fb6ff; text-decoration: none; display: block; }
+  .card .csrc a:hover { text-decoration: underline; }
+  .hint { position: fixed; left: var(--g); right: var(--g); bottom: calc(var(--g) + 94px); text-align: center; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); pointer-events: none; display: none; }
+  .clean .ui, .clean .card, .clean .src, .clean .hint { display: none !important; }
+  .clean .scale { bottom: calc(var(--g) + 8px); }
+  .no-ui .scale, .no-ui .src { bottom: calc(var(--g) + 8px); }
+  @media (orientation: portrait) {
+    .today { left: var(--g); right: var(--g); top: auto; bottom: calc(var(--g) + 70px); transform: none; width: auto; max-width: 760px; margin: 0 auto;
+      background: rgba(4,6,14,.8); border: 1px solid rgba(255,255,255,.07); border-radius: 12px; padding: 4px 12px; }
+    .clean .today { bottom: calc(var(--g) + 26px); }
+  }
+  @media (max-width: 700px) {
+    .top { top: calc(var(--g) + 6px); }
+    .shade { background: linear-gradient(rgba(1,2,7,.94) 0, rgba(1,2,7,.7) 13%, rgba(1,2,7,0) 27%, rgba(1,2,7,0) 74%, rgba(1,2,7,.7) 100%); }
+    h1 { font-size: clamp(26px, 8.4vw, 40px); }
+    .sub { font-size: 14px; }
+    .today, .legend { left: var(--g); right: var(--g); top: auto; bottom: calc(var(--g) + 70px); transform: none; width: auto; }
+    .legend { display: block; position: absolute; opacity: 0; }
+    .today, .legend { background: rgba(4,6,14,.8); border: 1px solid rgba(255,255,255,.07); border-radius: 12px; padding: 4px 12px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+    .legend .row { opacity: 1; }
+    .legend .row b { width: 1.8em; color: var(--gold); }
+    .clean .legend { bottom: calc(var(--g) + 26px); }
+    .clean .today { bottom: calc(var(--g) + 26px); }
+    .row { font-size: 12px; padding: .3em 0; }
+    .card { top: auto; bottom: calc(var(--g) + 66px); transform: none; max-height: 50vh; padding: 14px 14px 10px; }
+    .card h3 { font-size: 22px; }
+    .ui span { display: none; }
+    .hint { display: block; opacity: 0; }
+    .src { display: none; }
+    .lbl b { font-size: 10px; letter-spacing: .1em; }
+    .lbl i { font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div class="hud">
+  <div class="shade"></div>
+  <svg id="ov"></svg>
+  <div id="labels"></div>
+  <div class="top" id="top"><div class="kicker" id="kick"></div><h1 id="title"></h1><p class="sub" id="sub"></p><div id="gaugeBox"></div></div>
+  <div class="today" id="today"></div>
+  <div class="legend" id="legend"></div>
+  <div class="scale" id="scale"><i></i><span></span></div>
+  <div class="src">Dimensions: NASA / JPL · drawn at real scale</div>
+</div>
+<aside class="card" id="card" hidden>
+  <button class="x" id="cardX" aria-label="Close">×</button>
+  <div class="ck" id="cK"></div><h3 id="cH"></h3><div class="cs" id="cS"></div>
+  <h4>What it does</h4><p id="cD"></p>
+  <div id="cTw"><h4>Today</h4><p id="cT"></p></div>
+  <p class="cn" id="cN"></p>
+  <div class="csrc" id="cSrc"></div>
+</aside>
+<div class="hint" id="hint">Tap any part · what it does today</div>
+<div class="ui" id="ui">
+  <button class="nav" id="prevBtn" aria-label="Previous part">‹</button>
+  <button id="playBtn" aria-label="Pause">❚❚</button>
+  <input id="scrub" type="range" min="0" max="44" step="0.01" value="0" aria-label="Teardown time">
+  <button class="nav" id="nextBtn" aria-label="Next part">›</button>
+  <span>Tap a part · drag to turn</span>
+</div>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+const Q = new URLSearchParams(location.search);
+const CLEAN = Q.has('clean'), PLAY = Q.has('play');
+document.documentElement.classList.toggle('clean', CLEAN);
+const PHONE = Math.min(innerWidth, innerHeight) < 700;
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const D2R = Math.PI / 180;
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const smoother = (x) => { const u = clamp(x, 0, 1); return u * u * u * (u * (u * 6 - 15) + 10); };
+function mulberry32(a) { return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+// ---------- sources (every number on the page comes from one of these) ----------
+const SRC = {
+  bg80: ['NASA Voyager Backgrounder, Oct 1980 (NTRS)', 'https://ntrs.nasa.gov/citations/19810001583'],
+  kit77: ['NASA Voyager launch press kit, 1977', 'https://planetary.s3.amazonaws.com/assets/presskit/voyager-launch.pdf'],
+  sc: ['NASA: The Voyager spacecraft', 'https://science.nasa.gov/mission/voyager/spacecraft/'],
+  faq: ['NASA: Voyager FAQ', 'https://science.nasa.gov/mission/voyager/frequently-asked-questions/'],
+  v1: ['NASA: Voyager 1', 'https://science.nasa.gov/mission/voyager/voyager-1/'],
+  nssdc: ['NASA NSSDCA: Voyager 1', 'https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1977-084A'],
+  apr26: ['NASA Voyager blog, 17 Apr 2026', 'https://science.nasa.gov/blogs/voyager/2026/04/17/nasa-shuts-off-instrument-on-voyager-1-to-keep-spacecraft-operating/'],
+  oct26: ['NASA Voyager blog, 29 Oct 2026', 'https://science.nasa.gov/blogs/voyager/2026/10/29/nasas-voyager-1-conserves-power-resolves-brief-communications-pause/'],
+  cover: ['NASA: The Golden Record cover', 'https://science.nasa.gov/mission/voyager/golden-record-cover/'],
+};
+// Part cards: what it does, what it does today (st: 'on' working, 'off' switched off). Only sourced statements.
+const CARDS = {
+  hga: { k: 'Communications', h: 'High-gain antenna', s: '3.66 m dish', st: 'on',
+    d: 'All data are sent and received through this dish. It is aluminium honeycomb with graphite-epoxy skins, with an X-band feed horn at the centre and a subreflector on a three-legged truss. An S-band horn behind the subreflector doubles as the low-gain antenna.',
+    t: 'Still talking to Earth: data come down at about 160 bits a second on X-band. Contact paused on 18–19 Oct 2026 and came back on 20 Oct. On 18 Nov 2026 Voyager 1 is 25.89 billion km away, one light-day.', src: ['sc', 'bg80', 'oct26'] },
+  bus: { k: 'Structure', h: 'Ten-sided bus', s: '47 cm tall, 178 cm across the flats',
+    d: 'A 24.5 kg ten-sided aluminium frame with ten electronics bays. The electronics boxes are part of the structure. The bays are numbered 1 to 10, clockwise as seen from Earth.',
+    t: 'In September 2026 engineers turned off three devices and swapped in three lower-power ones to stretch the power.', src: ['bg80', 'sc', 'oct26'] },
+  bay1: { k: 'Bay 1', h: 'Radio transmitters', s: 'S-band up, X-band down', st: 'on',
+    d: 'Bay 1 holds the radio transmitters. Commands come up on S-band at 16 bits a second; data go down on X-band, near 8.4 GHz.',
+    t: 'The X-band downlink normally runs at 160 bits a second.', src: ['sc'], n: 'Where bay 1 sits relative to the booms is not in our sources; its place here is illustrative.' },
+  louver: { k: 'Four bays', h: 'Louvered bays', s: 'thermostatic louvers',
+    d: 'Louvers on four of the ten bays open on bimetallic springs when the electronics get warm, holding them near room temperature. These bays hold the power conditioning and the radio power amplifiers; the 1977 press kit adds the attitude electronics (HYPACE) and the tape recorder.',
+    src: ['bg80', 'kit77'], n: 'Which four bays is not in our sources; their places here are illustrative.' },
+  bays: { k: 'Electronics', h: 'Electronics bays', s: 'six computers, about 32K words',
+    d: 'The bays carry the computers that run the craft: command (CCS), flight data (FDS) and attitude and articulation control (AACS), two of each, about 32K words of memory in all, plus instrument electronics such as the magnetometer’s.',
+    src: ['faq', 'sc', 'bg80'], n: 'Which bay holds which computer is not in our sources; placement is illustrative.' },
+  trackers: { k: 'Navigation', h: 'Canopus star trackers', s: 'two, side by side',
+    d: 'Two star trackers sit side by side atop the upper ring of the bus. Through the attitude electronics, the tracker has the thrusters roll the craft until it locks on the star Canopus.', src: ['bg80'] },
+  tank: { k: 'Propulsion', h: 'Hydrazine tank', s: '71 cm titanium sphere',
+    d: 'It sits in the central cavity of the bus. It held 104 kg of hydrazine at launch, pushed out by helium through a rubber bladder to every thruster. (The 1977 press kit, written before launch, says 105 kg.)',
+    t: 'Voyager 1 weighed 815 kg at launch with its hydrazine. NASA puts it at about 733 kg now.', src: ['bg80', 'kit77', 'faq'] },
+  thr: { k: 'Propulsion', h: '16 thrusters', s: '0.89 N each', st: 'on',
+    d: 'Four fire for trajectory corrections. The other twelve form two six-thruster branches that hold the craft steady on three axes; one branch at a time is enough.',
+    t: 'During the 18–19 Oct 2026 contact pause, one group of thrusters went offline and their backups turned on.', src: ['bg80', 'oct26'], n: 'Nozzle positions are illustrative.' },
+  shunt: { k: 'Power', h: 'Shunt radiator', s: '0.37 m²',
+    d: 'Dumps any RTG power the craft does not need as heat. Its outer face doubled as a calibration target for the instruments on the scan platform.', src: ['kit77'] },
+  rtg: { k: 'Power', h: 'Three RTGs', s: '40.6 × 51 cm, 39 kg each', st: 'on',
+    d: 'Three Multi-Hundred Watt radioisotope thermoelectric generators turn the decay heat of plutonium-238 into electricity. Each sits in a beryllium case, in tandem on a 3.7 m boom of steel and titanium.',
+    t: 'About 158 W each at launch, about 470 W in all. NASA gives 225 W as of 2023, and about 4 W less every year.', src: ['v1', 'nssdc', 'sc', 'faq', 'bg80'], power: true },
+  sciboom: { k: 'Science', h: 'Science boom', s: '2.3 m, graphite epoxy', st: 'off',
+    d: 'A bridgework of graphite-epoxy tubing 180° from the RTGs, carrying the instruments most sensitive to radiation: cosmic ray and low-energy particle instruments at its mid-point, plasma science farther out, the scan platform at the end.',
+    t: 'Every instrument on it is now off.', src: ['bg80', 'sc'], n: 'NASA’s FAQ gives 3 m and NSSDCA about 2.5 m; this uses the 1980 backgrounder’s 2.3 m.' },
+  crs: { k: 'Instrument · CRS', h: 'Cosmic Ray Subsystem', s: 'mid-boom', st: 'off', off: 'Off to save power, 25 Feb 2025.',
+    d: 'Looks only for very energetic particles in plasma, and has the highest sensitivity of the three particle detectors.', src: ['sc', 'bg80'] },
+  lecp: { k: 'Instrument · LECP', h: 'Low-Energy Charged Particles', s: 'mid-boom', st: 'off', off: 'Off to save power, 17 Apr 2026. Its small 0.5 W motor stays on, so it could be switched back on.',
+    d: 'Looks for particles of higher energy than the plasma instrument, overlapping with the cosmic ray subsystem.', src: ['sc', 'apr26', 'bg80'] },
+  pls: { k: 'Instrument · PLS', h: 'Plasma Science', s: 'outer boom', st: 'off', off: 'Off because of degraded performance, 1 Feb 2007.',
+    d: 'Measures the low-energy ions and electrons that make up the bulk of the plasma.', src: ['sc', 'bg80'] },
+  scan: { k: 'Science', h: 'Scan platform', s: 'two-axis, 103 kg gimballed', st: 'off',
+    d: 'Points the remote-sensing instruments: the two cameras, the infrared spectrometer (IRIS), the ultraviolet spectrometer (UVS) and the photopolarimeter (PPS).',
+    t: 'All five are off.', src: ['bg80', 'sc'] },
+  iss: { k: 'Instrument · ISS', h: 'Imaging Science Subsystem', s: 'narrow- and wide-angle cameras', st: 'off', off: 'Both cameras off to save power, 14 Feb 1990.',
+    d: 'Two slow-scan vidicon cameras, a modified version of the designs flown on the earlier Mariners.', src: ['sc'], n: 'Instrument shapes and sizes on the platform are approximate.' },
+  iris: { k: 'Instrument · IRIS', h: 'Infrared Interferometer Spectrometer', s: 'and radiometer', st: 'off', off: 'Off to save power, 3 Jun 1998.',
+    d: 'It acts as three separate instruments in one.', src: ['sc'], n: 'Shape and size approximate.' },
+  uvs: { k: 'Instrument · UVS', h: 'Ultraviolet Spectrometer', s: 'scan platform', st: 'off', off: 'Off to save power, 19 Apr 2016.',
+    d: 'A very specialised light meter that is sensitive to ultraviolet light.', src: ['sc'], n: 'Shape and size approximate.' },
+  pps: { k: 'Instrument · PPS', h: 'Photopolarimeter', s: '0.2 m telescope', st: 'off', off: 'Off because of degraded performance, 29 Jan 1980.',
+    d: 'A 0.2 m telescope fitted with filters and polarisation analysers.', src: ['sc'], n: 'Shape approximate.' },
+  mag: { k: 'Instrument · MAG', h: 'Magnetometer boom', s: '13 m mast, 2.26 kg', st: 'on', off: 'On. One of the two science instruments still working.',
+    d: 'Four magnetometers in all: two high-field sensors on the body and two low-field sensors on this epoxy-glass mast, one at the tip and one 6 m closer. The mast uncoiled from a 66 cm canister on the RTG outrigger. Its main job is to measure changes in the Sun’s magnetic field with distance and time.',
+    src: ['bg80', 'sc', 'apr26'], n: 'The boom’s direction is drawn from NASA diagrams, not measured.' },
+  pws: { k: 'Instrument · PWS + PRA', h: 'Plasma-wave antennas', s: 'two 10 m whips', st: 'on', off: 'The Plasma Wave Subsystem is on, one of the two still working. Planetary Radio Astronomy has been off since 15 Jan 2008.',
+    d: 'Two beryllium-copper tubes at a right angle, shared by Planetary Radio Astronomy and the Plasma Wave Subsystem (10 Hz to 56 kHz). They were rolled flat in their housings and unrolled by small electric motors.',
+    src: ['bg80', 'faq', 'sc', 'apr26'] },
+  record: { k: 'Message', h: 'Golden Record', s: '30 cm, gold-plated copper',
+    d: 'Mounted on one side of the bus: 115 images, greetings in 55 languages, 35 sounds of Earth and 90 minutes of music. The cover shows how to play it, from the outside in, and carries a uranium-238 sample of about 0.00026 microcuries as a clock.',
+    t: 'It needs no power. It travels on with the craft.', src: ['v1', 'nssdc', 'cover'], n: 'Drawn as the disc; which side of the bus it faces is illustrative.' },
+};
+const STATUS = [
+  ['MAG', 'Magnetometer', 'ON', 1], ['PWS', 'Plasma wave', 'ON', 1],
+  ['LECP', 'Low-energy particles', 'off · 17 Apr 2026'], ['CRS', 'Cosmic rays', 'off · 25 Feb 2025'],
+  ['UVS', 'Ultraviolet spectrometer', 'off · 19 Apr 2016'], ['PRA', 'Planetary radio astronomy', 'off · 15 Jan 2008'],
+  ['PLS', 'Plasma science', 'degraded · 1 Feb 2007'], ['IRIS', 'Infrared spectrometer', 'off · 3 Jun 1998'],
+  ['ISS', 'Two cameras', 'off · 14 Feb 1990'], ['PPS', 'Photopolarimeter', 'degraded · 29 Jan 1980'],
+];
+
+// ---------- the script: chapters (seconds) ----------
+const CH = [
+  { id: 'hero', t: 0, k: 'Voyager 1 · launched 5 Sep 1977', h: 'Voyager 1, <b>taken apart</b>', s: 'Drawn at real scale from NASA’s own numbers.' },
+  { id: 'hga', t: 3.5, k: '01 · Communications', h: 'High-gain antenna', s: 'A 3.66 m dish. Every command up and every bit of data down goes through it.', labels: ['hga'], dims: ['dish'] },
+  { id: 'bus', t: 7.5, k: '02 · Structure', h: 'The ten-sided bus', s: '47 cm tall and 1.78 m across. Ten bays of electronics around one fuel tank.', labels: ['bay1', 'louver', 'bays', 'trackers'], dims: ['bus'] },
+  { id: 'fuel', t: 12, k: '03 · Propulsion', h: '104 kg of hydrazine', s: 'One 71 cm titanium tank fed 16 thrusters of 0.89 N each.', labels: ['tank', 'thr', 'shunt'] },
+  { id: 'rtg', t: 15.5, k: '04 · Power', h: 'Three RTGs', s: 'Plutonium-238 decay heat, turned into electricity on a 3.7 m boom.', labels: ['rtg'], dims: ['rtgboom'], gauge: true },
+  { id: 'sci', t: 20, k: '05 · Science boom', h: 'Seven instruments, one boom', s: 'Particle detectors along 2.3 m of graphite epoxy; the cameras and three more instruments on a steerable platform at the end.', labels: ['crs', 'lecp', 'pls', 'iss', 'iris', 'uvs', 'pps'] },
+  { id: 'mag', t: 24.5, k: '06 · Magnetometer', h: 'A 13 m mast that weighs 2.26 kg', s: 'Two low-field sensors: one at the tip, one 6 m closer in.', labels: ['mag'], dims: ['mag'] },
+  { id: 'pws', t: 28, k: '07 · Plasma waves', h: 'Two 10 m antennas', s: 'Beryllium-copper whips at a right angle, shared by two instruments.', labels: ['pws'], dims: ['pws'] },
+  { id: 'record', t: 31, k: '08 · Golden Record', h: '30 cm of gold-plated copper', s: '115 images, greetings in 55 languages, 35 sounds and 90 minutes of music.', labels: ['record'] },
+  { id: 'today', t: 34.5, k: 'Still working · Nov 2026', h: '<b>2 of 10</b> instruments are on', s: 'The magnetometer and the plasma wave subsystem. The rest were switched off to save power, or after they degraded.', labels: ['mag', 'pws'], list: true },
+  { id: 'home', t: 40, k: '18 Nov 2026', h: 'One light-day from Earth', s: '25.89 billion km out, still sending 160 bits a second home.' },
+];
+const END = 44;
+const FIT_PORTRAIT = [0.82, 0.9];   // fit radius in portrait (phone, other): below 1 zooms in, right for tall objects; use about 1.0 for wide ones
+CH.forEach((c, i) => (c.t1 = CH[i + 1]?.t ?? END + 1));
+const chAt = (T) => { let i = 0; while (i < CH.length - 1 && T >= CH[i + 1].t) i++; return i; };
+const CHI = Object.fromEntries(CH.map((c, i) => [c.id, i]));
+// Directed camera: [t, target x, y, z, radius to fit (m), azimuth°, elevation°]
+const CAM0 = [
+  [0, 0.25, 0.4, 0, 3.0, 56, 13], [3.2, 0.25, 0.45, 0, 3.4, 70, 16],
+  [5.6, 0, 1.95, 0, 3.2, 84, 20], [7.3, 0, 1.95, 0, 3.3, 92, 22],
+  [9.6, 0, 0.15, 0, 2.5, 104, 30], [11.6, 0, 0.1, 0, 2.5, 116, 28],
+  [13.6, 0, -0.2, 0, 2.3, 138, 24], [15.2, 0.2, -0.2, 0, 2.4, 124, 20],
+  [17.4, 3.4, -0.35, 0, 2.3, 74, 13], [19.6, 3.5, -0.35, 0, 2.2, 62, 17],
+  [22.0, -2.55, -0.05, 0.1, 2.1, 104, 12], [24.1, -2.6, -0.05, 0.1, 2.1, 116, 15],
+  [26.6, 5.0, 0.7, -3.2, 7.9, 53, 15], [27.8, 5.1, 0.7, -3.3, 8.0, 46, 17],
+  [30.0, 1.7, -2.4, 0, 7.8, 13, 6], [30.9, 1.7, -2.4, 0, 7.8, 20, 6],
+  [32.8, -0.67, 0.26, 2.06, 0.46, 108, 5], [34.2, -0.67, 0.26, 2.06, 0.5, 100, 8],
+  [36.6, 1.4, -0.6, -0.8, 8.2, 66, 20], [39.6, 1.4, -0.6, -0.8, 8.5, 75, 22],
+  [42.3, 0.25, 0.4, 0, 3.2, 52, 13], [44, 0.25, 0.4, 0, 3.3, 57, 14],
+];
+const CAM = CAM0.map((k) => k.map((v, j) => (j === 4 ? Math.log(v) : v)));
+// Hermite spline through keys with Catmull-Rom tangents, flat at the ends
+function spline(keys, j, u) {
+  if (u <= keys[0][0]) return keys[0][j];
+  if (u >= keys.at(-1)[0]) return keys.at(-1)[j];
+  let i = 0; while (u > keys[i + 1][0]) i++;
+  const tan = (k) => {
+    if (k <= 0 || k >= keys.length - 1) return 0;
+    const d0 = (keys[k][j] - keys[k - 1][j]) / (keys[k][0] - keys[k - 1][0]), d1 = (keys[k + 1][j] - keys[k][j]) / (keys[k + 1][0] - keys[k][0]);
+    return d0 * d1 <= 0 ? 0 : 2 / (1 / d0 + 1 / d1);   // monotone: holds stay holds
+  };
+  const x0 = keys[i][0], y0 = keys[i][j], x1 = keys[i + 1][0], y1 = keys[i + 1][j], h = x1 - x0, t = (u - x0) / h;
+  return (2 * t ** 3 - 3 * t * t + 1) * y0 + (t ** 3 - 2 * t * t + t) * h * tan(i) + (-2 * t ** 3 + 3 * t * t) * y1 + (t ** 3 - t * t) * h * tan(i + 1);
+}
+
+// ---------- renderer ----------
+const canvas = document.getElementById('gl');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+const DPR = Math.min(devicePixelRatio || 1, 2);
+renderer.setPixelRatio(DPR);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#010207');
+const camera = new THREE.PerspectiveCamera(34, 1, 0.05, 4000);
+const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, samples: 4 }));
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(4, 4), 0.32, 0.55, 0.92);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+// environment: black space with one warm Sun-side panel and a faint cool one, for metal and foil highlights
+{
+  const env = new THREE.Scene();
+  env.background = new THREE.Color('#000000');
+  const panel = (w, h, pos, col, k) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(col).multiplyScalar(k), side: THREE.DoubleSide }));
+    m.position.copy(pos); m.lookAt(0, 0, 0); env.add(m);
+  };
+  panel(9, 9, V(5, 12, 5), '#fff1dc', 3.2);
+  panel(6, 14, V(-12, 2, -6), '#7f9cff', 0.3);
+  panel(14, 3, V(0, -10, 8), '#334466', 0.25);
+  const pm = new THREE.PMREMGenerator(renderer);
+  scene.environment = pm.fromScene(env, 0.02).texture;
+  scene.environmentIntensity = 0.9;
+}
+const sun = new THREE.DirectionalLight('#fff3e2', 3.0); sun.position.set(0.45, 1, 0.42);
+const rim = new THREE.DirectionalLight('#8fb0ff', 1.3); rim.position.set(-0.7, -0.35, -0.6);
+scene.add(sun, rim, new THREE.HemisphereLight('#1d2746', '#000000', 0.5));
+
+// ---------- procedural textures (seeded) ----------
+function crinkle(size, seed, n) {
+  const r = mulberry32(seed), c = document.createElement('canvas'); c.width = c.height = size;
+  const g = c.getContext('2d'); g.fillStyle = '#808080'; g.fillRect(0, 0, size, size);
+  for (let i = 0; i < n; i++) {
+    const x = r() * size, y = r() * size, s = size * (0.02 + r() * 0.09), v = r() < 0.5 ? 255 : 0, a = 0.05 + r() * 0.16, k = 3 + Math.floor(r() * 3), ph = r() * 6.3;
+    g.fillStyle = `rgba(${v},${v},${v},${a})`;
+    for (const [ox, oy] of [[0, 0], [-size, 0], [0, -size], [-size, -size], [size, 0], [0, size]]) {
+      g.beginPath();
+      for (let j = 0; j < k; j++) { const t = ph + (j / k) * 6.283 + r() * 0.5, rr = s * (0.6 + r() * 0.6); g.lineTo(x + ox + Math.cos(t) * rr, y + oy + Math.sin(t) * rr); }
+      g.fill();
+    }
+  }
+  const h = g.getImageData(0, 0, size, size).data, out = g.createImageData(size, size);
+  const H = (x, y) => h[(((y + size) % size) * size + ((x + size) % size)) * 4] / 255;
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    const dx = (H(x + 1, y) - H(x - 1, y)) * 6, dy = (H(x, y + 1) - H(x, y - 1)) * 6, l = Math.hypot(dx, dy, 1), o = (y * size + x) * 4;
+    out.data[o] = (-dx / l * 0.5 + 0.5) * 255; out.data[o + 1] = (-dy / l * 0.5 + 0.5) * 255; out.data[o + 2] = (1 / l * 0.5 + 0.5) * 255; out.data[o + 3] = 255;
+  }
+  g.putImageData(out, 0, 0);
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.NoColorSpace; t.anisotropy = 4;
+  return t;
+}
+const TEX = PHONE ? 256 : 512;
+const crinkN = crinkle(TEX, 7, PHONE ? 500 : 1400);
+const louverTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+  g.fillStyle = '#222'; g.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 8; i++) { const gr = g.createLinearGradient(0, 0, 14, 0); gr.addColorStop(0, '#f2f4f8'); gr.addColorStop(1, '#8a9099'); g.fillStyle = gr; g.save(); g.translate(i * 16 + 1, 4); g.fillRect(0, 0, 13, 120); g.restore(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+})();
+const recordTex = (() => {
+  const S = PHONE ? 512 : 1024, c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d'), r = mulberry32(55), m = S / 2;
+  const gr = g.createRadialGradient(m * 0.8, m * 0.7, 0, m, m, m); gr.addColorStop(0, '#ffe7a8'); gr.addColorStop(0.6, '#d9a441'); gr.addColorStop(1, '#a8741f');
+  g.fillStyle = gr; g.fillRect(0, 0, S, S);
+  for (let rr = m * 0.36; rr < m * 0.985; rr += S / 700) { g.strokeStyle = `rgba(${r() < 0.5 ? '70,40,0' : '255,240,200'},${0.06 + r() * 0.12})`; g.lineWidth = S / 1400; g.beginPath(); g.arc(m, m, rr, 0, 6.2832); g.stroke(); }
+  g.fillStyle = 'rgba(120,80,20,.35)'; g.beginPath(); g.arc(m, m, m * 0.33, 0, 6.2832); g.fill();
+  g.strokeStyle = 'rgba(255,235,190,.5)'; g.lineWidth = S / 400; g.beginPath(); g.arc(m, m, m * 0.33, 0, 6.2832); g.stroke();
+  g.fillStyle = '#2a1a05'; g.beginPath(); g.arc(m, m, m * 0.025, 0, 6.2832); g.fill();
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+})();
+
+// ---------- materials ----------
+const BASE = {
+  mli: new THREE.MeshStandardMaterial({ color: '#141519', roughness: 0.42, metalness: 0.55, normalMap: crinkN, normalScale: new THREE.Vector2(0.9, 0.9) }),
+  gold: new THREE.MeshStandardMaterial({ color: '#d6a24a', roughness: 0.3, metalness: 1, normalMap: crinkN, normalScale: new THREE.Vector2(1.1, 1.1) }),
+  white: new THREE.MeshStandardMaterial({ color: '#efede6', roughness: 0.62, metalness: 0, side: THREE.BackSide }),
+  dishBack: new THREE.MeshStandardMaterial({ color: '#25262b', roughness: 0.55, metalness: 0.4, side: THREE.FrontSide }),
+  alu: new THREE.MeshStandardMaterial({ color: '#c3c8d0', roughness: 0.28, metalness: 0.95 }),
+  ti: new THREE.MeshStandardMaterial({ color: '#9a9ea6', roughness: 0.34, metalness: 0.9 }),
+  dark: new THREE.MeshStandardMaterial({ color: '#34363c', roughness: 0.5, metalness: 0.6 }),
+  be: new THREE.MeshStandardMaterial({ color: '#55575d', roughness: 0.45, metalness: 0.75 }),
+  strut: new THREE.MeshStandardMaterial({ color: '#a7adb6', roughness: 0.35, metalness: 0.85 }),
+  lens: new THREE.MeshStandardMaterial({ color: '#05060a', roughness: 0.08, metalness: 0.2 }),
+  louver: new THREE.MeshStandardMaterial({ map: louverTex, roughness: 0.38, metalness: 1 }),
+  record: new THREE.MeshStandardMaterial({ map: recordTex, roughness: 0.34, metalness: 0.55, color: '#ffffff' }),
+  copper: new THREE.MeshStandardMaterial({ color: '#c79a6e', roughness: 0.32, metalness: 1 }),
+};
+crinkN.repeat.set(2, 2);
+
+// ---------- parts registry ----------
+const craft = new THREE.Group(); scene.add(craft);
+const parts = {};
+const lineMats = [];
+function part(id) {
+  return (parts[id] ??= { id, objs: [], mats: [], cache: {}, lmats: [], hi: 0, glow: 0, anchor: null });
+}
+function M(p, name) { // per-part material clone, so a part can light up on its own
+  if (!p.cache[name]) { const m = BASE[name].clone(); m.userData.e0 = m.emissive.clone(); p.cache[name] = m; p.mats.push(m); }
+  return p.cache[name];
+}
+function LM(p, color, w) {
+  const m = new LineMaterial({ color, linewidth: w, worldUnits: false, transparent: true, depthWrite: true });
+  m.userData = { w, c0: new THREE.Color(color) }; p.lmats.push(m); lineMats.push(m); return m;
+}
+// a piece of a part: explodes by `off` (m) during chapter `ch`; optional end rotation q1
+function piece(p, obj, ch, off = V(0, 0, 0), q1 = null) {
+  obj.userData = { ...obj.userData, pid: p.id, base: obj.position.clone(), off, ch: CHI[ch], q0: obj.quaternion.clone(), q1 };
+  obj.traverse((o) => { o.userData.pid = p.id; });
+  craft.add(obj); p.objs.push(obj); return obj;
+}
+const mesh = (geo, mat, pos = V(0, 0, 0)) => { const o = new THREE.Mesh(geo, mat); o.position.copy(pos); return o; };
+const Y = V(0, 1, 0);
+const alongQ = (dir) => new THREE.Quaternion().setFromUnitVectors(Y, dir.clone().normalize());
+// merged cylinders between point pairs (trusses, struts)
+function struts(pairs, r, seg = 6) {
+  const gs = pairs.map(([a, b]) => {
+    const d = b.clone().sub(a), g = new THREE.CylinderGeometry(r, r, d.length(), seg, 1, true);
+    g.applyQuaternion(alongQ(d)); g.translate((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2); return g;
+  });
+  return mergeGeometries(gs);
+}
+function lineSeg(pairs, mat) {
+  const g = new LineSegmentsGeometry(); g.setPositions(pairs.flatMap(([a, b]) => [a.x, a.y, a.z, b.x, b.y, b.z]));
+  const l = new LineSegments2(g, mat); l.computeLineDistances(); return l;
+}
+function proxy(a, b, r) { // invisible fat cylinder so thin parts are easy to tap
+  const d = b.clone().sub(a), o = mesh(new THREE.CylinderGeometry(r, r, d.length(), 6), new THREE.MeshBasicMaterial());
+  o.quaternion.copy(alongQ(d)); o.position.copy(a).add(b).multiplyScalar(0.5); o.visible = false; o.userData.proxy = true; return o;
+}
+
+// ---------- the model, in metres (+Y points at Earth) ----------
+// Bus: 47 cm high, 178 cm across the flats (NASA 1980). Face k has its outward normal at azimuth k·36°.
+const APO = 0.89, CIRC = APO / Math.cos(18 * D2R), BH = 0.47, SIDE = 2 * APO * Math.tan(18 * D2R);
+const az = (deg, r, y) => V(Math.cos(deg * D2R) * r, y, Math.sin(deg * D2R) * r);
+const busP = part('bus');
+{
+  const g = new THREE.Group();
+  const ring = (y) => { const t = mesh(new THREE.TorusGeometry(CIRC, 0.016, 5, 10), M(busP, 'alu'), V(0, y, 0)); t.rotation.set(Math.PI / 2, 0, -18 * D2R); return t; };
+  g.add(ring(BH / 2), ring(-BH / 2));
+  const longerons = []; for (let k = 0; k < 10; k++) { const a = k * 36 + 18; longerons.push([az(a, CIRC, -BH / 2), az(a, CIRC, BH / 2)]); }
+  g.add(mesh(struts(longerons, 0.014), M(busP, 'alu')));
+  // HGA support truss: bus top ring up to the dish's 178 cm support ring
+  const ringY = 0.55 + 0.89 * 0.89 / 6, tr = [];
+  for (let k = 0; k < 10; k++) { const a = k * 36 + 18; tr.push([az(a, CIRC, BH / 2), az(a - 18, 0.89, ringY)], [az(a, CIRC, BH / 2), az(a + 18, 0.89, ringY)]); }
+  g.add(mesh(struts(tr, 0.012), M(busP, 'strut')));
+  // propulsion-module truss adapter that stayed with the craft
+  const ad = []; for (let k = 0; k < 8; k++) { const a = k * 45 + 22.5; ad.push([az(a, 0.86, -BH / 2), az(a + 22, 0.5, -0.66)]); }
+  g.add(mesh(struts(ad, 0.013), M(busP, 'strut')));
+  const lr = mesh(new THREE.TorusGeometry(0.5, 0.022, 6, 40), M(busP, 'dark'), V(0, -0.66, 0)); lr.rotation.x = Math.PI / 2; g.add(lr);
+  piece(busP, g, 'hero');
+  busP.anchor = () => az(160, CIRC, BH / 2);
+  // multi-layer thermal blankets, top and bottom
+  const blanket = (y) => { const b = mesh(new THREE.CylinderGeometry(CIRC * 0.98, CIRC * 0.98, 0.03, 10), M(busP, 'mli'), V(0, y, 0)); b.rotation.y = -18 * D2R; return b; };
+  piece(busP, blanket(BH / 2 + 0.016), 'bus', V(0, 1.2, 0));
+  piece(busP, blanket(-BH / 2 - 0.016), 'bus', V(0, -0.62, 0));
+}
+// ten bays (layout illustrative except: bay 1 = radio, four louvered bays, NASA)
+const BAYS = ['bays', 'louver', 'bay1', 'record', 'bays', 'bays', 'louver', 'bays', 'louver', 'louver'];
+BAYS.forEach((kind, k) => {
+  const id = kind === 'record' ? 'bays' : kind, p = part(id);
+  const face = kind === 'louver' ? M(p, 'louver') : k % 4 === 0 ? M(p, 'gold') : M(p, 'mli');
+  const side = M(p, 'mli');
+  const g = new THREE.Group();
+  g.add(mesh(new THREE.BoxGeometry(SIDE * 0.96, BH * 0.94, 0.3), [side, side, M(p, 'mli'), M(p, 'mli'), face, side], V(0, 0, 0)));
+  if (kind === 'bay1') for (let j = 0; j < 3; j++) g.add(mesh(new THREE.BoxGeometry(0.12, 0.08, 0.03), M(p, 'alu'), V(-0.16 + j * 0.16, -0.12, 0.16)));
+  const n = az(k * 36, 1, 0);
+  g.position.copy(n.clone().multiplyScalar(APO - 0.15));
+  g.quaternion.setFromUnitVectors(V(0, 0, 1), n);
+  piece(p, g, 'bus', kind === 'record' ? V(0, 0, 0) : n.clone().multiplyScalar(0.72));   // the record's bay stays put
+  if (!p.anchor) p.anchor = () => g.localToWorld(V(0, BH * 0.3, 0.16));
+});
+// star trackers atop the upper ring
+{
+  const p = part('trackers'), g = new THREE.Group();
+  for (const a of [196, 212]) {
+    const s = mesh(new THREE.BoxGeometry(0.1, 0.22, 0.1), M(p, 'mli'), az(a, 0.72, BH / 2 + 0.13));
+    const shade = mesh(new THREE.CylinderGeometry(0.06, 0.045, 0.1, 12, 1, true), M(p, 'alu'), az(a, 0.72, BH / 2 + 0.28));
+    g.add(s, shade);
+  }
+  piece(p, g, 'bus', V(-0.25, 0.5, -0.12));
+  p.anchor = () => g.localToWorld(az(204, 0.72, BH / 2 + 0.3));
+}
+// hydrazine tank: 71 cm titanium sphere in the central cavity (NASA 1980)
+{
+  const p = part('tank'), g = new THREE.Group();
+  g.add(mesh(new THREE.SphereGeometry(0.355, 48, 24), M(p, 'ti')));
+  const band = mesh(new THREE.TorusGeometry(0.356, 0.012, 6, 64), M(p, 'alu')); band.rotation.x = Math.PI / 2; g.add(band);
+  g.add(mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.12, 10), M(p, 'alu'), V(0, -0.4, 0)));
+  piece(p, g, 'hero');
+  p.anchor = () => g.localToWorld(V(0.25, 0.25, 0.1));
+}
+// 16 thrusters: 4 trajectory-correction + 12 attitude (positions illustrative)
+{
+  const p = part('thr');
+  const nozzle = () => {
+    const g = new THREE.Group();
+    const c = mesh(new THREE.CylinderGeometry(0.012, 0.03, 0.07, 14, 1, true), M(p, 'alu'), V(0, -0.035, 0));
+    const v = mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.04, 10), M(p, 'gold'), V(0, 0.02, 0));
+    g.add(c, v); return g;
+  };
+  for (let k = 0; k < 4; k++) { const a = 45 + 90 * k, n = nozzle(); n.position.copy(az(a, 0.55, -BH / 2 - 0.05)); piece(p, n, 'fuel', az(a, 0.35, -0.4)); }
+  for (let k = 0; k < 4; k++) for (let j = 0; j < 3; j++) {
+    const a = 70 + 90 * k + (j - 1) * 7, n = nozzle(); n.position.copy(az(a, 0.93, -BH / 2 + 0.04));
+    const dir = j === 1 ? V(0, -1, 0) : az(a + (j - 1) * 90, 1, 0); n.quaternion.copy(alongQ(dir.negate()));
+    piece(p, n, 'fuel', az(a, 0.5, -0.25));
+  }
+  p.anchor = () => p.objs[6].getWorldPosition(V());
+}
+// shunt radiator, 0.37 m², on the truss adapter facing the scan platform
+{
+  const p = part('shunt'), s = mesh(new THREE.BoxGeometry(0.61, 0.61, 0.025), M(p, 'ti'), V(-0.62, -0.5, 0));
+  M(p, 'ti').roughness = 0.7; M(p, 'ti').metalness = 0.5;
+  s.rotation.y = Math.PI / 2; piece(p, s, 'fuel', V(-0.45, -0.15, 0));
+  p.anchor = () => s.localToWorld(V(0, 0.25, 0.02));
+}
+// high-gain antenna: 3.66 m dish, vertex 0.55 m above the bus centre
+const DISH_R = 1.83, F4 = 6, VY = 0.55, rimY = VY + DISH_R * DISH_R / F4;
+{
+  const p = part('hga'), g = new THREE.Group();
+  const prof = []; for (let i = 0; i <= 24; i++) { const r = DISH_R * i / 24; prof.push(new THREE.Vector2(r, r * r / F4)); }
+  const dg = new THREE.LatheGeometry(prof, 96);
+  g.add(mesh(dg, M(p, 'white')), mesh(dg, M(p, 'dishBack'), V(0, -0.012, 0)));
+  const rimT = mesh(new THREE.TorusGeometry(DISH_R, 0.02, 6, 120), M(p, 'alu'), V(0, DISH_R * DISH_R / F4, 0)); rimT.rotation.x = Math.PI / 2; g.add(rimT);
+  const sr = mesh(new THREE.TorusGeometry(0.89, 0.025, 6, 60), M(p, 'dark'), V(0, 0.89 * 0.89 / F4 - 0.02, 0)); sr.rotation.x = Math.PI / 2; g.add(sr);
+  g.add(mesh(new THREE.CylinderGeometry(0.07, 0.16, 0.36, 24, 1, true), M(p, 'gold'), V(0, 0.18, 0)));   // X-band feed horn
+  g.position.y = VY;
+  piece(p, g, 'hga', V(0, 2.0, 0));
+  // subreflector + S-band horn (low-gain antenna) on a three-legged truss
+  const s = new THREE.Group(), SY = 1.18;
+  const sp = []; for (let i = 0; i <= 10; i++) { const r = 0.26 * i / 10; sp.push(new THREE.Vector2(r, -r * r / 1.2)); }
+  s.add(mesh(new THREE.LatheGeometry(sp, 40), new THREE.MeshStandardMaterial({ color: '#e8e6df', roughness: 0.5, side: THREE.DoubleSide }), V(0, SY, 0)));
+  s.add(mesh(new THREE.CylinderGeometry(0.06, 0.09, 0.2, 18), M(p, 'gold'), V(0, SY + 0.12, 0)));
+  const legs = [0, 120, 240].map((a) => [az(a + 30, 1.05, 1.05 * 1.05 / F4), az(a + 30, 0.2, SY - 0.03)]);
+  s.add(mesh(struts(legs, 0.018), M(p, 'strut')));
+  s.position.y = VY;
+  piece(p, s, 'hga', V(0, 2.55, 0));
+  p.anchor = () => g.localToWorld(V(DISH_R * 0.72, DISH_R * DISH_R * 0.52 / F4, 0.4));
+}
+// RTG boom: 3.7 m of steel and titanium at azimuth 0; three RTGs in tandem near its end
+const RTG_ROOT = V(1.0, -0.14, 0), RTG_DIR = V(Math.cos(-6 * D2R), Math.sin(-6 * D2R), 0), rtgAt = (s) => RTG_ROOT.clone().addScaledVector(RTG_DIR, s);
+{
+  const p = part('rtg');
+  const g = new THREE.Group();
+  g.add(mesh(struts([[V(APO, 0.2, 0.22), RTG_ROOT], [V(APO, 0.2, -0.22), RTG_ROOT], [V(APO, -0.2, 0.22), RTG_ROOT], [V(APO, -0.2, -0.22), RTG_ROOT], [RTG_ROOT, rtgAt(3.7 - 0.9)]], 0.022), M(p, 'strut')));
+  piece(p, g, 'hero');
+  [2.05, 2.6, 3.15].forEach((s, i) => {
+    const u = new THREE.Group();
+    u.add(mesh(new THREE.CylinderGeometry(0.203, 0.203, 0.48, 32), M(p, 'be')));
+    for (const y of [-0.255, 0.255]) u.add(mesh(new THREE.CylinderGeometry(0.17, 0.2, 0.03, 32), M(p, 'dark'), V(0, y, 0)));
+    for (let f = 0; f < 6; f++) { const fin = mesh(new THREE.BoxGeometry(0.012, 0.46, 0.11), M(p, 'be')); const a = f * 60 * D2R; fin.position.set(Math.cos(a) * 0.255, 0, Math.sin(a) * 0.255); fin.rotation.y = -a; u.add(fin); }
+    u.position.copy(rtgAt(s)); u.quaternion.copy(alongQ(RTG_DIR));
+    piece(p, u, 'rtg', V(0, 0.42, 0).addScaledVector(RTG_DIR, (i - 1) * 0.42).add(V(0, 0, 0.0)));
+  });
+  p.anchor = () => p.objs[3].localToWorld(V(0, 0, 0.3));
+}
+// magnetometer boom: 13 m triangular epoxy-glass mast from a canister on the RTG outrigger (direction illustrative)
+const MAG_ROOT = V(1.25, 0.06, -0.42), MAG_DIR = V(Math.cos(10 * D2R) * Math.cos(-35 * D2R), Math.sin(10 * D2R), Math.cos(10 * D2R) * Math.sin(-35 * D2R)), magAt = (s) => MAG_ROOT.clone().addScaledVector(MAG_DIR, s);
+{
+  const p = part('mag'), g = new THREE.Group();
+  const can = mesh(new THREE.CylinderGeometry(0.114, 0.114, 0.66, 24), M(p, 'mli'), magAt(0.33)); can.quaternion.copy(alongQ(MAG_DIR)); g.add(can);
+  g.add(mesh(struts([[RTG_ROOT, magAt(0.1)]], 0.015), M(p, 'strut')));
+  const e1 = new THREE.Vector3().crossVectors(MAG_DIR, Y).normalize(), e2 = new THREE.Vector3().crossVectors(e1, MAG_DIR).normalize();
+  const tri = [0, 1, 2].map((i) => e1.clone().multiplyScalar(Math.cos(i * 2.094) * 0.09).addScaledVector(e2, Math.sin(i * 2.094) * 0.09));
+  const segs = [], st = 40;
+  for (let k = 0; k <= st; k++) {
+    const c = magAt(0.66 + (12.34 * k) / st);
+    for (let i = 0; i < 3; i++) {
+      segs.push([c.clone().add(tri[i]), c.clone().add(tri[(i + 1) % 3])]);
+      if (k < st) { const c2 = magAt(0.66 + (12.34 * (k + 1)) / st); segs.push([c.clone().add(tri[i]), c2.clone().add(tri[i])], [c.clone().add(tri[i]), c2.clone().add(tri[(i + 1) % 3])]); }
+    }
+  }
+  g.add(lineSeg(segs, LM(p, '#cfd5de', 1.1)));
+  for (const s of [7, 13]) { const sensor = mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.16, 16), M(p, 'mli'), magAt(s)); sensor.quaternion.copy(alongQ(MAG_DIR)); g.add(sensor); }
+  const plate = mesh(new THREE.BoxGeometry(0.26, 0.03, 0.26), M(p, 'gold'), magAt(13.02)); plate.quaternion.copy(alongQ(MAG_DIR)); g.add(plate);
+  g.add(proxy(magAt(0), magAt(13), 0.25));
+  piece(p, g, 'hero');
+  p.anchor = () => magAt(13);
+}
+// plasma-wave / radio-astronomy antennas: two 10 m beryllium-copper whips at a right angle (directions illustrative)
+const PWS = [1, -1].map((s) => ({ root: V(0.96, BH / 2 - 0.02, 0.1 * s), dir: V(0.2, -0.707, 0.707 * s).normalize() }));
+{
+  const p = part('pws'), g = new THREE.Group();
+  g.add(lineSeg(PWS.map(({ root, dir }) => [root, root.clone().addScaledVector(dir, 10)]), LM(p, '#d9ad7c', 1.6)));
+  for (const { root, dir } of PWS) { const h = mesh(new THREE.BoxGeometry(0.09, 0.12, 0.09), M(p, 'mli'), root); g.add(h); g.add(proxy(root, root.clone().addScaledVector(dir, 10), 0.22)); }
+  piece(p, g, 'hero');
+  p.anchor = () => PWS[0].root.clone().addScaledVector(PWS[0].dir, 6.5);
+}
+// science boom: 2.3 m graphite-epoxy bridgework at azimuth 180, hinged on a truss behind the dish
+const SCI_ROOT = V(-1.05, 0.3, 0), SCI_DIR = V(-Math.cos(4 * D2R), -Math.sin(4 * D2R), 0), sciAt = (s) => SCI_ROOT.clone().addScaledVector(SCI_DIR, s);
+{
+  const p = part('sciboom'), g = new THREE.Group();
+  const hinge = [[V(-APO, 0.2, 0.22), SCI_ROOT], [V(-APO, 0.2, -0.22), SCI_ROOT], [V(-APO, -0.15, 0.2), SCI_ROOT], [V(-APO, -0.15, -0.2), SCI_ROOT]];
+  const tri = [V(0, 0.07, 0), V(0, -0.035, 0.06), V(0, -0.035, -0.06)], lat = [];
+  const N = 10;
+  for (let k = 0; k <= N; k++) {
+    const c = sciAt((2.3 * k) / N);
+    for (let i = 0; i < 3; i++) {
+      lat.push([c.clone().add(tri[i]), c.clone().add(tri[(i + 1) % 3])]);
+      if (k < N) { const c2 = sciAt((2.3 * (k + 1)) / N); lat.push([c.clone().add(tri[i]), c2.clone().add(tri[i])], [c.clone().add(tri[i]), c2.clone().add(tri[(i + 1) % 3])]); }
+    }
+  }
+  g.add(mesh(struts(hinge, 0.016), M(p, 'strut')), mesh(struts(lat, 0.007, 5), M(p, 'dark')));
+  g.add(proxy(sciAt(0), sciAt(2.3), 0.12));
+  piece(p, g, 'hero');
+  p.anchor = () => sciAt(0.6).add(V(0, 0.08, 0));
+}
+// instruments on the science boom (shapes and sizes approximate)
+function inst(id, build, pos, off, anchor) {
+  const p = part(id), g = new THREE.Group(); build(g, p); g.position.copy(pos);
+  piece(p, g, 'sci', off); p.anchor = () => g.localToWorld(anchor.clone()); return g;
+}
+const tube = (p, r, L, mat, lensMat = 'lens') => {
+  const t = new THREE.Group();
+  t.add(mesh(new THREE.CylinderGeometry(r, r, L, 28), M(p, mat)));
+  t.add(mesh(new THREE.CylinderGeometry(r * 0.82, r * 0.82, 0.01, 28), M(p, lensMat), V(0, L / 2 + 0.004, 0)));
+  t.add(mesh(new THREE.TorusGeometry(r, r * 0.08, 6, 28), M(p, 'alu'), V(0, L / 2, 0)).rotateX(Math.PI / 2));
+  return t;
+};
+const BORE = V(0, -0.22, 1).normalize();
+inst('crs', (g, p) => {
+  g.add(mesh(new THREE.BoxGeometry(0.3, 0.2, 0.24), M(p, 'mli')));
+  for (let i = 0; i < 4; i++) g.add(mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.09, 12), M(p, 'gold'), V(-0.1 + i * 0.066, 0.14, 0.04)));
+}, sciAt(1.15).add(V(0, 0, 0.17)), V(0, 0.12, 0.55), V(0, 0.15, 0.1));
+inst('lecp', (g, p) => {
+  const d = mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.16, 28), M(p, 'mli')); d.rotation.x = Math.PI / 2; g.add(d);
+  g.add(mesh(new THREE.BoxGeometry(0.1, 0.1, 0.08), M(p, 'gold'), V(0, 0, -0.12)));
+  for (let i = 0; i < 2; i++) g.add(mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.12, 10), M(p, 'alu'), V(0.06 - i * 0.12, 0.1, 0.02)));
+}, sciAt(1.15).add(V(0, 0, -0.18)), V(0, -0.05, -0.55), V(0, 0.12, -0.05));
+inst('pls', (g, p) => {
+  g.add(mesh(new THREE.CylinderGeometry(0.075, 0.09, 0.1, 24), M(p, 'alu')));
+  for (let i = 0; i < 3; i++) { const a = i * 2.094; const c = mesh(new THREE.CylinderGeometry(0.05, 0.035, 0.07, 18, 1, true), M(p, 'alu'), V(Math.cos(a) * 0.11, -0.02, Math.sin(a) * 0.11)); c.rotation.set(Math.sin(a) * 0.8, 0, -Math.cos(a) * 0.8); g.add(c); }
+}, sciAt(1.75).add(V(0, 0.13, 0)), V(0, 0.45, 0), V(0, 0.08, 0));
+const SCAN_C = sciAt(2.3).add(V(0, -0.2, 0));
+{
+  const p = part('scan'), g = new THREE.Group();
+  g.add(mesh(new THREE.BoxGeometry(0.36, 0.1, 0.3), M(p, 'mli')));
+  g.add(mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.18, 18), M(p, 'dark'), V(0, 0.12, 0)));
+  g.position.copy(SCAN_C); piece(p, g, 'sci', V(0, -0.22, 0));
+  p.anchor = () => g.localToWorld(V(0.18, 0, 0.15));
+}
+const onScan = (id, build, rel, spread, anchor) => inst(id, (g, p) => { build(g, p); g.children.forEach((c) => c.quaternion.premultiply(alongQ(BORE))); }, SCAN_C.clone().add(rel), V(0, -0.22, 0).addScaledVector(spread.clone().normalize(), 0.36), anchor);
+onScan('iris', (g, p) => { g.add(tube(p, 0.25, 0.44, 'mli', 'gold')); }, V(0, -0.2, 0.05), V(0, -1, 0.2), V(0, -0.25, 0.1));
+onScan('iss', (g, p) => { const na = tube(p, 0.085, 0.95, 'mli'), wa = tube(p, 0.065, 0.5, 'mli'); wa.position.y = -0.17; g.add(na, wa); }, V(0.34, 0.08, 0.05), V(1, 0.5, 0), V(0, 0.05, 0.3));
+onScan('uvs', (g, p) => { g.add(mesh(new THREE.BoxGeometry(0.15, 0.55, 0.15), M(p, 'mli'))); g.add(mesh(new THREE.BoxGeometry(0.1, 0.01, 0.1), M(p, 'lens'), V(0, 0.28, 0))); }, V(-0.32, 0.1, 0.02), V(-1, 0.6, 0), V(0, 0.1, 0.2));
+onScan('pps', (g, p) => { g.add(tube(p, 0.07, 0.4, 'mli')); }, V(-0.3, -0.16, 0.06), V(-1, -0.6, 0.2), V(0, -0.05, 0.15));
+// Golden Record: 30 cm disc on the bus face at azimuth 108 (which face is illustrative)
+{
+  const p = part('record'), n = az(108, 1, 0), g = new THREE.Group();
+  const disc = mesh(new THREE.CylinderGeometry(0.152, 0.152, 0.012, 96), [M(p, 'gold'), M(p, 'record'), M(p, 'gold')]); disc.rotation.x = Math.PI / 2; g.add(disc);
+  for (let i = 0; i < 4; i++) { const a = i * 1.5708 + 0.785; g.add(mesh(new THREE.BoxGeometry(0.03, 0.03, 0.05), M(p, 'alu'), V(Math.cos(a) * 0.16, Math.sin(a) * 0.16, -0.02))); }
+  g.position.copy(n.clone().multiplyScalar(APO + 0.03));
+  g.quaternion.setFromUnitVectors(V(0, 0, 1), n);
+  const q1 = g.quaternion.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.5, 0.18, 0)));
+  piece(p, g, 'record', n.clone().multiplyScalar(1.22).add(V(0, 0.26, 0)), q1);
+  p.anchor = () => g.localToWorld(V(0.1, 0.12, 0));
+}
+
+// ---------- stars (seeded): three layers plus a Milky Way band ----------
+const sky = new THREE.Group(); scene.add(sky);
+{
+  const r = mulberry32(1977), N = PHONE ? 5000 : 9000, pos = [], col = [], siz = [];
+  const bandN = V(0.35, 0.82, -0.45).normalize(), b1 = new THREE.Vector3().crossVectors(bandN, V(1, 0, 0)).normalize(), b2 = new THREE.Vector3().crossVectors(bandN, b1);
+  for (let i = 0; i < N; i++) {
+    let d;
+    if (i < N * 0.45) { const t = r() * 6.2832, lat = (r() + r() + r() - 1.5) * 0.16; d = b1.clone().multiplyScalar(Math.cos(t)).addScaledVector(b2, Math.sin(t)).addScaledVector(bandN, lat).normalize(); }
+    else { const u = r() * 2 - 1, t = r() * 6.2832; d = V(Math.sqrt(1 - u * u) * Math.cos(t), u, Math.sqrt(1 - u * u) * Math.sin(t)); }
+    pos.push(d.x * 1500, d.y * 1500, d.z * 1500);
+    const m = Math.pow(r(), 6), w = r();
+    const c = new THREE.Color().setHSL(w < 0.3 ? 0.08 : w < 0.6 ? 0.6 : 0.12, w < 0.6 ? 0.5 : 0.1, 0.75 + 0.25 * m);
+    const k = i < N * 0.45 ? 0.35 + 0.65 * m : 0.25 + 0.75 * m; col.push(c.r * k, c.g * k, c.b * k);
+    siz.push(0.6 + m * 2.6);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setAttribute('size', new THREE.Float32BufferAttribute(siz, 1));
+  const mat = new THREE.ShaderMaterial({ uniforms: { uS: { value: DPR } }, depthWrite: false, transparent: true, blending: THREE.AdditiveBlending,
+    vertexShader: `attribute float size; varying vec3 vC; uniform float uS; void main(){ vC = color; gl_PointSize = size * uS; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`,
+    fragmentShader: `varying vec3 vC; void main(){ float d = length(gl_PointCoord - .5); float a = smoothstep(.5, 0., d); gl_FragColor = vec4(vC * a * 1.6, a); }`, vertexColors: true });
+  sky.add(new THREE.Points(g, mat));
+  // soft glow of the band: big faint sprites
+  const gc = document.createElement('canvas'); gc.width = gc.height = 64; const gg = gc.getContext('2d'); const rg = gg.createRadialGradient(32, 32, 0, 32, 32, 32); rg.addColorStop(0, 'rgba(255,255,255,1)'); rg.addColorStop(1, 'rgba(255,255,255,0)'); gg.fillStyle = rg; gg.fillRect(0, 0, 64, 64);
+  const gt = new THREE.CanvasTexture(gc);
+  for (let i = 0; i < 90; i++) {
+    const t = r() * 6.2832, lat = (r() - 0.5) * 0.1, d = b1.clone().multiplyScalar(Math.cos(t)).addScaledVector(b2, Math.sin(t)).addScaledVector(bandN, lat).normalize();
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: gt, color: new THREE.Color().setHSL(0.6 + r() * 0.1, 0.4, 0.5), transparent: true, opacity: 0.028 + r() * 0.03, depthWrite: false, blending: THREE.AdditiveBlending }));
+    s.position.copy(d.multiplyScalar(1400)); s.scale.setScalar(200 + r() * 300); sky.add(s);
+  }
+}
+
+// ---------- HUD ----------
+const $ = (id) => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg', ov = $('ov'), labelsEl = $('labels');
+const svg = (tag, attrs, parent = ov) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.append(e); return e; };
+const LABELED = Object.keys(CARDS);
+const labels = Object.fromEntries(LABELED.map((id) => {
+  const el = document.createElement('div'); el.className = 'lbl';
+  el.innerHTML = `<b>${CARDS[id].h}</b><i>${CARDS[id].s}</i><s></s>`; labelsEl.append(el);
+  const lead = svg('path', { stroke: '#ffffff', 'stroke-width': 1, 'stroke-opacity': 0.75 });
+  const dot = svg('circle', { r: 3, fill: '#ffd58c', stroke: 'none' });
+  dot.style.fill = '#ffd58c';
+  return [id, { id, el, lead, dot, i: el.querySelector('i'), nb: el.querySelector('s'), op: 0, w: 0, h: 0 }];
+}));
+// dimension lines, drawn like a technical drawing between two 3D points
+const DIMS = {
+  dish: { a: () => parts.hga.objs[0].localToWorld(V(-DISH_R, DISH_R * DISH_R / F4, 0)), b: () => parts.hga.objs[0].localToWorld(V(DISH_R, DISH_R * DISH_R / F4, 0)), text: '3.66 m', side: -1 },
+  bus: { a: () => V(-APO, -BH / 2, 0), b: () => V(APO, -BH / 2, 0), text: '1.78 m', side: 1 },
+  rtgboom: { a: () => V(APO, -0.14, 0), b: () => rtgAt(3.7), text: '3.7 m boom', side: 1 },
+  sciboom: { a: () => sciAt(0), b: () => sciAt(2.3), text: '2.3 m', side: 1 },
+  mag: { a: () => magAt(0), b: () => magAt(13), text: '13 m', side: -1 },
+  pws: { a: () => PWS[1].root, b: () => PWS[1].root.clone().addScaledVector(PWS[1].dir, 10), text: '10 m', side: 1 },
+};
+for (const d of Object.values(DIMS)) {
+  d.g = svg('g', { opacity: 0 });
+  d.line = svg('path', { stroke: '#ffd58c', 'stroke-width': 1.2 }, d.g);
+  d.t = svg('text', { 'text-anchor': 'middle', 'dominant-baseline': 'middle' }, d.g); d.t.textContent = d.text;
+}
+// today list + RTG gauge
+$('today').innerHTML = STATUS.map(([a, n, s, on]) => `<div class="row${on ? ' on' : ''}"><b>${a}</b><span>${n}</span><em>${s}</em></div>`).join('') +
+  '<div class="row pw"><b>RTGs</b><span>≈470 W at launch</span><em>225 W in 2023</em></div>';
+const rows = [...$('today').children];
+const gaugeHTML = (w2) => `<div class="gauge"><div><span>1977</span><i style="width:100%"></i><em>≈470 W</em></div><div><span>2023</span><i id="g2" style="width:${w2}%"></i><em>225 W</em></div><small>and about 4 W less every year</small></div>`;
+
+// ---------- interaction ----------
+const ui = { yaw: 0, pitch: 0, zoom: 1, playing: PLAY || !Q.has('t'), T: PLAY ? 0 : clamp(+Q.get('t') || 0, 0, END), last: null, sel: null, hover: null };
+const scrub = $('scrub'), playBtn = $('playBtn');
+scrub.max = END;
+const setBtn = () => { playBtn.textContent = ui.playing ? '❚❚' : ui.T >= END - 0.01 ? '↺' : '▶'; playBtn.ariaLabel = ui.playing ? 'Pause' : 'Play'; };
+playBtn.onclick = () => { if (!ui.playing && ui.T >= END - 0.01) ui.T = 0; ui.playing = !ui.playing; ui.last = null; setBtn(); };
+scrub.oninput = () => { ui.T = +scrub.value; ui.playing = false; setBtn(); };
+const jump = (d) => { const i = clamp(chAt(ui.T + 0.01) + d, 0, CH.length - 1); ui.T = CH[i].t + (i ? 0.05 : 0); ui.yaw = ui.pitch = 0; ui.zoom = 1; ui.playing = true; ui.last = null; setBtn(); };
+$('prevBtn').onclick = () => jump(ui.T - CH[chAt(ui.T)].t > 1.2 ? 0 : -1);
+$('nextBtn').onclick = () => jump(1);
+addEventListener('keydown', (e) => {
+  if (e.key === ' ') { e.preventDefault(); playBtn.click(); }
+  if (e.key === 'ArrowRight') jump(1);
+  if (e.key === 'ArrowLeft') jump(-1);
+  if (e.key === 'Escape') select(null);
+});
+const card = $('card');
+function select(id) {
+  ui.sel = id; if (id) ui.touched = true;
+  if (!id || CLEAN) { card.hidden = true; return; }
+  const c = CARDS[id];
+  $('cK').textContent = c.k; $('cH').textContent = c.h; $('cS').textContent = c.s; $('cD').textContent = c.d;
+  const today = c.off ?? c.t;
+  $('cTw').hidden = !today;
+  $('cT').innerHTML = today ? (c.st ? `<span class="pill ${c.st === 'on' ? 'on' : ''}">${c.st === 'on' ? 'WORKING' : 'OFF'}</span>` : '') + today + (c.power ? gaugeHTML(47.9).replace('id="g2"', '') : '') : '';
+  $('cN').textContent = c.n || ''; $('cN').hidden = !c.n;
+  $('cSrc').innerHTML = c.src.map((k) => `<a href="${SRC[k][1]}" target="_blank" rel="noopener">↗ ${SRC[k][0]}</a>`).join('');
+  card.hidden = false;
+  if (ui.playing) { ui.playing = false; setBtn(); }
+}
+$('cardX').onclick = () => select(null);
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+ray.params.Line2 = { threshold: 6 };
+function pick(x, y) {
+  ndc.set((x / innerWidth) * 2 - 1, -(y / innerHeight) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hit = ray.intersectObject(craft, true).find((h) => h.object.userData.pid && (h.object.visible || h.object.userData.proxy));
+  if (!hit) return null;
+  const pid = hit.object.userData.pid;
+  return CARDS[pid] ? pid : null;
+}
+let drag = null;
+canvas.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY }; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointermove', (e) => {
+  if (!drag) { if (e.pointerType === 'mouse') { ui.hover = pick(e.clientX, e.clientY); canvas.style.cursor = ui.hover ? 'pointer' : 'grab'; } return; }
+  ui.yaw += (e.clientX - drag.x) * 0.25; ui.pitch = clamp(ui.pitch + (e.clientY - drag.y) * 0.2, -60, 60);
+  drag.x = e.clientX; drag.y = e.clientY;
+});
+canvas.addEventListener('pointerup', (e) => {
+  if (drag && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 6) select(pick(e.clientX, e.clientY));
+  drag = null;
+});
+canvas.addEventListener('wheel', (e) => { e.preventDefault(); ui.zoom = clamp(ui.zoom * Math.exp(e.deltaY * 0.001), 0.35, 2.5); }, { passive: false });
+
+// ---------- layout ----------
+let W = 0, H = 0, halfV = 0, halfH = 0, LK = 1, NARROW = false, BOTTOM = false;
+function resize() {
+  W = innerWidth; H = innerHeight; NARROW = W < 700; BOTTOM = NARROW || W < H;   // portrait: panels go to the bottom
+  renderer.setSize(W, H); composer.setPixelRatio(DPR); composer.setSize(W, H); bloom.resolution.set(W / 2, H / 2);
+  camera.aspect = W / H; camera.fov = W < H ? 40 : 34; camera.updateProjectionMatrix();
+  halfV = camera.fov / 2 * D2R; halfH = Math.atan(Math.tan(halfV) * camera.aspect);
+  LK = Math.max(0.8, Math.min(W, H * 0.8) / 1080);
+  lineMats.forEach((m) => { m.resolution.set(W, H); m.linewidth = m.userData.w * Math.max(1, LK * 1.3); });
+  ov.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  document.documentElement.classList.toggle('no-ui', CLEAN);
+  for (const l of Object.values(labels)) { l.w = l.el.offsetWidth; l.h = l.el.offsetHeight; }
+}
+addEventListener('resize', resize); resize();
+
+// ---------- per-frame ----------
+const tmp = V(), tmpQ = new THREE.Quaternion();
+const target = V(), camPos = V();
+let lastCh = -1;
+const exAt = (ci, T) => {
+  const home = 1 - smoother((T - CH[CHI.home].t - 0.2) / 2.2);
+  return ci === 0 ? 0 : smoother((T - CH[ci].t - 0.35) / 1.6) * home;
+};
+const winOp = (c, T, a = 0.35, b = 0.35) => smoother((T - c.t) / a) * (1 - smoother((T - (c.t1 - b)) / b));
+const project = (p) => { tmp.copy(p).project(camera); return { x: (tmp.x * 0.5 + 0.5) * W, y: (-tmp.y * 0.5 + 0.5) * H, ok: tmp.z < 1 && tmp.z > -1 }; };
+const safeTop = () => $('top').getBoundingClientRect().bottom + 10;
+
+function frame(now) {
+  if (ui.playing) {
+    if (ui.last != null) ui.T += Math.min(0.1, (now - ui.last) / 1000);
+    if (ui.T >= END) { ui.T = END; ui.playing = false; setBtn(); }
+  }
+  ui.last = now;
+  const T = ui.T;
+  if (document.activeElement !== scrub) scrub.value = T;
+  const ci = chAt(T), c = CH[ci];
+
+  // explode
+  for (const p of Object.values(parts)) for (const o of p.objs) {
+    const e = exAt(o.userData.ch, T);
+    o.position.copy(o.userData.base).addScaledVector(o.userData.off, e);
+    if (o.userData.q1) o.quaternion.copy(o.userData.q0).slerp(o.userData.q1, e);
+    for (const [ch, off] of o.userData.more ?? []) o.position.addScaledVector(off, exAt(ch, T));   // later moves: obj.userData.more = [[CHI.<chapter>, V(dx, dy, dz)]]
+  }
+  // camera
+  for (let j = 1; j <= 6; j++) CAM_V[j] = spline(CAM, j, T);
+  CAM_V[4] = Math.exp(CAM_V[4]);
+  target.set(CAM_V[1], CAM_V[2], CAM_V[3]);
+  const numMode = NARROW && (c.labels?.length ?? 0) >= 2 && !c.list, single = NARROW && (c.labels?.length ?? 0) === 1 && !c.list;
+  const R = CAM_V[4] * ui.zoom * (W < H ? (NARROW ? FIT_PORTRAIT[0] : FIT_PORTRAIT[1]) : 1) * (BOTTOM && (c.list || numMode) ? 1.15 : 1), A = (CAM_V[5] + ui.yaw) * D2R, E = clamp(CAM_V[6] + ui.pitch, -80, 80) * D2R;
+  const dist = R / Math.sin(Math.min(halfV, halfH));
+  camPos.set(Math.cos(E) * Math.cos(A), Math.sin(E), Math.cos(E) * Math.sin(A)).multiplyScalar(dist).add(target);
+  camera.position.copy(camPos); camera.lookAt(target);
+  camera.near = Math.max(0.005, dist * 0.02);   // 5 mm floor, so hand-sized objects don't clip camera.updateProjectionMatrix();
+  const shift = c.list ? winOp(c, T, 1.2, 0.8) : 0;
+  const panelH = BOTTOM ? (c.list ? $('today').offsetHeight * shift : numMode ? $('legend').offsetHeight * winOp(c, T, 1.2, 0.8) : 0) : 0;
+  camera.setViewOffset(W, H, BOTTOM ? 0 : W * 0.16 * shift, -H * (BOTTOM ? 0.05 : 0.035) + panelH * 0.5, W, H);
+  sky.position.copy(camera.position);
+  camera.updateMatrixWorld();
+
+  // today: dim the craft, light what still works
+  const todayAmt = smoother((T - CH[CHI.today].t - 0.3) / 1.2) * (1 - smoother((T - CH[CHI.home].t) / 1.0));
+  sun.intensity = 3.0 * (1 - 0.6 * todayAmt); rim.intensity = 1.3 * (1 - 0.5 * todayAmt); scene.environmentIntensity = 0.9 * (1 - 0.6 * todayAmt);
+  const pulse = 0.8 + 0.2 * Math.sin(T * 3.2);
+  for (const p of Object.values(parts)) {
+    const on = (p.id === 'mag' || p.id === 'pws') ? todayAmt * pulse : 0;
+    p.hi += ((ui.sel === p.id ? 1 : ui.hover === p.id ? 0.5 : 0) - p.hi) * 0.2;
+    for (const m of p.mats) { m.emissive.setRGB(1, 0.72, 0.35); m.emissiveIntensity = 0.12 * p.hi + 1.6 * on; }
+    for (const m of p.lmats) { m.color.copy(m.userData.c0).lerp(GOLD, Math.max(on, p.hi * 0.6)).multiplyScalar(1 + 1.8 * on); m.linewidth = m.userData.w * Math.max(1, LK * 1.3) * (1 + 0.7 * on); }
+  }
+
+  // captions
+  if (ci !== lastCh) {
+    lastCh = ci;
+    $('kick').textContent = c.k; $('title').innerHTML = c.h; $('sub').textContent = c.s;
+    $('gaugeBox').innerHTML = c.gauge ? gaugeHTML(100) : '';
+    $('legend').innerHTML = (c.labels || []).map((id, i) => `<div class="row"><b>${i + 1}</b><span>${CARDS[id].h}</span><em>${CARDS[id].s}</em></div>`).join('');
+    (c.labels || []).forEach((id, i) => (labels[id].nb.textContent = i + 1));
+  }
+  $('top').style.opacity = winOp(c, T, 0.4, ci === CH.length - 1 ? 0.0001 : 0.3);
+  if (c.gauge) { const g = smoother((T - c.t - 1.4) / 2.2); const g2 = $('g2'); if (g2) g2.style.width = `${100 - g * 52.1}%`; }
+  const listOp = c.list ? winOp(c, T, 0.5, 0.4) : 0;
+  $('today').style.opacity = listOp;
+  rows.forEach((r, i) => (r.style.opacity = c.list ? smoother((T - c.t - 0.8 - i * 0.22) / 0.4) : 0));
+
+  // labels with leader lines
+  const top = safeTop(), bottom = H - (CLEAN ? 30 : 84) - (BOTTOM && c.list ? $('today').offsetHeight + 8 : NARROW && numMode ? $('legend').offsetHeight + 8 : 0);
+  $('legend').style.opacity = numMode ? winOp(c, T, 1.2, 0.3) * smoother((T - c.t - 0.7) / 0.6) : 0;
+  const want = new Set(c.labels || []); if (ui.sel) want.add(ui.sel);
+  const placed = { l: [], r: [] };
+  const rightLimit = c.list && !BOTTOM ? W - $('today').offsetWidth - 40 : W - 16;
+  for (const l of Object.values(labels)) {
+    const p = parts[l.id];
+    const tgt = want.has(l.id) ? (l.id === ui.sel ? 1 : single ? 0 : winOp(c, T, 1.4, 0.3) * smoother((T - c.t - 0.7) / 0.6)) : 0;
+    l.op += (tgt - l.op) * (tgt > l.op ? 0.25 : 0.35);
+    if (l.op < 0.01 || !p?.anchor) { l.el.style.opacity = 0; l.lead.style.opacity = 0; l.dot.style.opacity = 0; continue; }
+    const a = project(p.anchor());
+    if (!a.ok) { l.el.style.opacity = 0; l.lead.style.opacity = 0; l.dot.style.opacity = 0; continue; }
+    if (c.id === 'today' && (l.id === 'mag' || l.id === 'pws')) { l.i.textContent = 'ON'; l.i.className = 'on'; } else { l.i.textContent = CARDS[l.id].s; l.i.className = ''; }
+    const chip = numMode && l.id !== ui.sel && (c.labels || []).includes(l.id);
+    l.el.classList.toggle('n', chip);
+    l.w = l.el.offsetWidth; l.h = l.el.offsetHeight; l.chip = chip;
+    let side = a.x < W * 0.5 ? 'l' : 'r';
+    if (side === 'r' && a.x + 40 + l.w > rightLimit) side = 'l';
+    if (side === 'l' && a.x - 40 - l.w < 16) side = 'r';
+    placed[side].push({ l, a, y: a.y - l.h * 0.5 - 26 });
+  }
+  for (const side of ['l', 'r']) {
+    const arr = placed[side].sort((p, q) => p.y - q.y);
+    for (let i = 0; i < arr.length; i++) { arr[i].y = Math.max(arr[i].y, top, i ? arr[i - 1].y + arr[i - 1].l.h + 8 : -1e9); }
+    for (let i = arr.length - 1; i >= 0; i--) { const lim = i < arr.length - 1 ? arr[i + 1].y - arr[i].l.h - 8 : bottom - arr[i].l.h; arr[i].y = Math.min(arr[i].y, lim); }
+    for (const { l, a, y } of arr) {
+      const off = l.chip ? 14 : NARROW ? 28 : 46;
+      let x = side === 'r' ? Math.max(a.x + off, 0) : a.x - off - l.w;
+      x = clamp(x, 16, W - 16 - l.w);
+      l.el.className = 'lbl ' + side + (ui.sel === l.id ? ' sel' : '') + (l.chip ? ' n' : '');
+      l.el.style.transform = `translate(${x}px, ${y}px)`;
+      l.el.style.opacity = l.op;
+      const ly = y + l.h * 0.36, lx = side === 'r' ? x - 6 : x + l.w + 6, kx = side === 'r' ? lx - 14 : lx + 14;
+      l.lead.setAttribute('d', `M${a.x},${a.y} L${kx},${ly} L${lx},${ly}`);
+      l.lead.style.opacity = l.op * 0.85; l.dot.setAttribute('cx', a.x); l.dot.setAttribute('cy', a.y); l.dot.style.opacity = l.op;
+    }
+  }
+  // dimension lines
+  for (const [k, d] of Object.entries(DIMS)) {
+    const show = (c.dims || []).includes(k) ? winOp(c, T, 1.0, 0.3) * smoother((T - c.t - 1.6) / 0.6) : 0;
+    d.g.setAttribute('opacity', show.toFixed(3));
+    if (show < 0.01) continue;
+    const A = project(d.a()), B = project(d.b());
+    if (!A.ok || !B.ok) { d.g.setAttribute('opacity', 0); continue; }
+    let nx = -(B.y - A.y), ny = B.x - A.x; const L = Math.hypot(nx, ny) || 1; nx = nx / L * 22 * d.side; ny = ny / L * 22 * d.side;
+    const a1 = { x: A.x + nx, y: A.y + ny }, b1 = { x: B.x + nx, y: B.y + ny }, tx = (nx / 22) * 7, ty = (ny / 22) * 7;
+    d.line.setAttribute('d', `M${A.x + nx * 0.25},${A.y + ny * 0.25} L${a1.x + tx},${a1.y + ty} M${B.x + nx * 0.25},${B.y + ny * 0.25} L${b1.x + tx},${b1.y + ty} M${a1.x},${a1.y} L${b1.x},${b1.y}`);
+    let ang = Math.atan2(b1.y - a1.y, b1.x - a1.x) / D2R; if (ang > 90) ang -= 180; if (ang < -90) ang += 180;
+    const mx = (a1.x + b1.x) / 2 + nx * 0.6, my = (a1.y + b1.y) / 2 + ny * 0.6;
+    d.t.setAttribute('transform', `translate(${mx},${my}) rotate(${ang})`);
+  }
+  // scale bar at the camera target's depth
+  const pxPerM = H / (2 * Math.tan(halfV) * dist);
+  const nice = [0.01, 0.02, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 50, 100].find((m) => m * pxPerM >= 54) ?? 100;   // any object size, 1 cm to 100 m
+  scaleBar.style.width = `${nice * pxPerM}px`; scaleTxt.textContent = nice < 1 ? `${Math.round(nice * 100)} cm` : `${nice} m`;
+  const hintOp = CLEAN || !NARROW || ui.touched ? 0 : (c.id === 'hero' || c.id === 'home') ? winOp(c, T, 0.8, 0.3) : 0;
+  $('hint').style.opacity = hintOp;
+  $('scale').style.opacity = (BOTTOM ? 1 - Math.max(listOp, +$('legend').style.opacity || 0) : 1) * (1 - hintOp);
+
+  composer.render();
+  requestAnimationFrame(frame);
+}
+const CAM_V = [];
+const GOLD = new THREE.Color('#ffc46b');
+const scaleBar = document.querySelector('#scale i'), scaleTxt = document.querySelector('#scale span');
+// self-check: the drawn parts measure what the sources say
+window.__dims = {
+  dish_m: +(2 * DISH_R).toFixed(2), bus_flats_m: +(2 * APO).toFixed(2), bus_h_m: BH, tank_m: 0.71, rtg_d_m: 0.406,
+  rtg_boom_m: +RTG_ROOT.distanceTo(rtgAt(3.7)).toFixed(2), sci_boom_m: +sciAt(0).distanceTo(sciAt(2.3)).toFixed(2), mag_boom_m: +magAt(0).distanceTo(magAt(13)).toFixed(2),
+  pws_m: PWS.map(({ dir }) => +dir.clone().multiplyScalar(10).length().toFixed(2)), pws_angle_deg: +(Math.acos(PWS[0].dir.dot(PWS[1].dir)) / D2R).toFixed(1), record_m: 0.304,
+};
+await document.fonts.load('250 40px "Inter Tight Variable"').catch(() => {});
+resize(); setBtn();
+requestAnimationFrame(frame);
+window.__ready = true;
+</script>
+</body>
+</html>
