@@ -51,6 +51,48 @@
         "motion-graphics"
       ],
       "category": "design"
+    },
+    {
+      "name": "plan-to-walk",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/plan-to-walk"
+      ],
+      "description": "Turn a floor plan into a scroll-driven 3D page: an ink plan sheet, a section cut that rises into walls, sun sweeping the drawing into stone, then a walk through the rooms. Typed plans or hand-built landmarks.",
+      "homepage": "https://github.com/mys1erious/skills/tree/main/skills/plan-to-walk",
+      "repository": "https://github.com/mys1erious/skills",
+      "license": "MIT",
+      "keywords": [
+        "threejs",
+        "3d",
+        "architecture",
+        "floor-plan",
+        "scrollytelling",
+        "webgl"
+      ],
+      "category": "design"
+    },
+    {
+      "name": "take-apart",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/take-apart"
+      ],
+      "description": "Build a real object at real scale in three.js from sourced numbers and take it apart: an exploded view with labels, dimension lines, a scale bar and tap cards with sources, on a self-playing timeline.",
+      "homepage": "https://github.com/mys1erious/skills/tree/main/skills/take-apart",
+      "repository": "https://github.com/mys1erious/skills",
+      "license": "MIT",
+      "keywords": [
+        "threejs",
+        "3d",
+        "teardown",
+        "exploded-view",
+        "explainer",
+        "webgl"
+      ],
+      "category": "design"
     }
   ]
 }

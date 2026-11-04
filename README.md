@@ -14,6 +14,8 @@ npx skills add mys1erious/skills
 |---|---|---|
 | [ascii-art](skills/ascii-art) | Builds ASCII art that looks designed: animated and interactive canvas pieces, image, logo and text to ASCII, plain-text art, and loopable videos for X. Tests what it builds in headless Chrome. | You want ASCII art or animation, a text-mode or terminal look, an image or logo turned into ASCII, or an ASCII piece to post. |
 | [explainer-video](skills/explainer-video) | Makes short narrated explainer videos drawn in code, where the picture shows what the voice teaches with real data. Script, AI voice with word timings, frame-exact render, music and sound mix. | You want a TikTok, Reels, Shorts or YouTube video that teaches something, a narrated data story, or one script in several styles to compare. |
+| [plan-to-walk](skills/plan-to-walk) | Turns a floor plan into a scroll-driven 3D page where the plan is the model: an ink sheet, a section cut that rises into walls, sun sweeping the drawing into stone, then a walk through the rooms. | You want a house, flat or landmark walkthrough, a floor plan turned 3D, or a "blueprint becomes real" page. |
+| [take-apart](skills/take-apart) | Builds a real object at real scale from sourced numbers and takes it apart: exploded chapters, labels, dimension lines and tap cards with sources. | You want a teardown or exploded view of a machine, vehicle, spacecraft, device or artefact, or "what's inside X". |
 
 Each skill's page has a demo made by a fresh agent with only that skill, example requests, what's inside, requirements and what it sends where.
 
@@ -38,6 +40,8 @@ Run `npx skills update` to update.
 /plugin marketplace add mys1erious/skills
 /plugin install ascii-art@mys1erious
 /plugin install explainer-video@mys1erious
+/plugin install plan-to-walk@mys1erious
+/plugin install take-apart@mys1erious
 ```
 
 Run `/plugin marketplace update mys1erious` to update.
@@ -61,7 +65,7 @@ Copy a skill's folder, e.g. `skills/ascii-art/`, into your agent's skills folder
 Every pull request:
 - validates each skill against the [Agent Skills spec](https://agentskills.io/specification);
 - validates the Claude Code marketplace;
-- renders the ascii-art starter and the explainer-video starter in headless Chrome, and fails on any page error.
+- renders the ascii-art and explainer-video starters and the plan-to-walk and take-apart templates in headless Chrome, and fails on any page error.
 
 ## License
 

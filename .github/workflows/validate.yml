@@ -33,3 +33,13 @@ jobs:
           curl -sfL -o "$d/fonts/InterTight.ttf" "https://github.com/google/fonts/raw/main/ofl/intertight/InterTight%5Bwght%5D.ttf"
           uv run skills/explainer-video/scripts/voice.py "$d" --silent
           uv run skills/explainer-video/scripts/render.py "$d" sheet
+      - name: plan-to-walk template renders without page errors
+        run: |
+          python3 -m http.server 8801 --bind 127.0.0.1 -d skills/plan-to-walk/assets/template &
+          until curl -sf -o /dev/null http://127.0.0.1:8801/; do sleep 0.2; done
+          node skills/plan-to-walk/scripts/shoot.mjs "http://127.0.0.1:8801/?clean" "$RUNNER_TEMP/walk" --size 800x500 --times 0.3,8.6,20
+      - name: take-apart template renders without page errors
+        run: |
+          python3 -m http.server 8802 --bind 127.0.0.1 -d skills/take-apart/assets/template &
+          until curl -sf -o /dev/null http://127.0.0.1:8802/; do sleep 0.2; done
+          node skills/take-apart/scripts/shoot.mjs "http://127.0.0.1:8802/?clean" "$RUNNER_TEMP/apart" --size 800x500 --times 2,23
